@@ -18,6 +18,7 @@ class NexoFlow_Settings
         add_action('admin_post_nexoflow_save_settings', array($this, 'save'));
         add_action('admin_post_nexoflow_test_connection', array($this, 'test_connection'));
         add_action('admin_post_nexoflow_sync_now', array($this, 'sync_now'));
+        add_action('admin_post_nexoflow_disconnect', array($this, 'disconnect'));
         add_action('admin_notices', array($this, 'notices'));
     }
 
@@ -119,6 +120,16 @@ class NexoFlow_Settings
                         ?></p>
                     <?php endif; ?>
                 </form>
+                <?php if ($has_key) : ?>
+                    <form method="post" action="<?php echo esc_url($save_url); ?>" class="nexoflow-disconnect">
+                        <?php wp_nonce_field('nexoflow_disconnect', 'nexoflow_nonce'); ?>
+                        <input type="hidden" name="action" value="nexoflow_disconnect" />
+                        <button type="submit" class="button button-secondary nexoflow-button-icon">
+                            <span class="dashicons dashicons-no" aria-hidden="true"></span>
+                            <?php echo esc_html__('Disconnect', 'nexoflow'); ?>
+                        </button>
+                    </form>
+                <?php endif; ?>
             </div>
 
             <div class="nexoflow-card">
@@ -179,7 +190,7 @@ class NexoFlow_Settings
                 </div>
             </div>
 
-            <p class="nexoflow-help"><?php echo esc_html__('Create a WordPress project in NexoFlow, copy the site connect key, paste it here.', 'nexoflow'); ?></p>
+            <p class="nexoflow-help"><?php echo esc_html__('Create a WordPress project in NexoFlow, copy the site connect key, paste it here. WordPress pulls new jobs every minute. Sync now is only needed if you want to pull immediately.', 'nexoflow'); ?></p>
         </div>
         <?php
     }
@@ -224,6 +235,21 @@ class NexoFlow_Settings
     {
         $this->guard('nexoflow_test_connection');
         $this->probe_connection('tested_ok', 'tested_fail');
+    }
+
+    public function disconnect()
+    {
+        $this->guard('nexoflow_disconnect');
+
+        delete_option('nexoflow_site_key');
+        delete_option('nexoflow_connected');
+        delete_option('nexoflow_last_error');
+        delete_option('nexoflow_last_sync');
+        delete_option('nexoflow_project');
+        delete_option('nexoflow_job_attempts');
+
+        $this->store_notice('success', __('Disconnected. Posts already on this site were left in place.', 'nexoflow'));
+        $this->redirect('disconnected');
     }
 
     public function sync_now()

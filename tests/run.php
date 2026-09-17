@@ -71,6 +71,12 @@ nexoflow_assert(NexoFlow_Client::sanitize_api_base('https://abc.ngrok.io/') === 
 nexoflow_assert(NexoFlow_Client::sanitize_api_base('http://example.com') === '', 'Rejects http API base');
 nexoflow_assert(NexoFlow_Client::api_base() === 'https://nexoflow.net', 'Default API base is production');
 
+$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer ' . $valid_key;
+nexoflow_assert(NexoFlow_Client::request_bearer_token() === $valid_key, 'Reads a Bearer token');
+$_SERVER['HTTP_AUTHORIZATION'] = 'Basic nope';
+nexoflow_assert(NexoFlow_Client::request_bearer_token() === '', 'Rejects a non-Bearer header');
+unset($_SERVER['HTTP_AUTHORIZATION']);
+
 $health = array(
     'ok' => true,
     'project' => array(

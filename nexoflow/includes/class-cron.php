@@ -14,6 +14,7 @@ class NexoFlow_Cron
     {
         add_filter('cron_schedules', array($this, 'schedules'));
         add_action(self::HOOK, array($this, 'run'));
+        add_action('init', array($this, 'ensure_scheduled'));
     }
 
     public function schedules($schedules)
@@ -32,9 +33,17 @@ class NexoFlow_Cron
 
     public function activate()
     {
-        if (!wp_next_scheduled(self::HOOK)) {
-            wp_schedule_event(time(), 'nexoflow_minute', self::HOOK);
+        add_filter('cron_schedules', array($this, 'schedules'));
+        $this->ensure_scheduled();
+    }
+
+    public function ensure_scheduled()
+    {
+        if (wp_next_scheduled(self::HOOK)) {
+            return;
         }
+
+        wp_schedule_event(time() + 60, 'nexoflow_minute', self::HOOK);
     }
 
     public function deactivate()

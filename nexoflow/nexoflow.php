@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NexoFlow
  * Description: Publish NexoFlow articles to this WordPress site.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: NexoFlow
  * Author URI: https://nexoflow.net
  * License: GPLv2 or later
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('NEXOFLOW_VERSION', '1.0.0');
+define('NEXOFLOW_VERSION', '1.0.1');
 define('NEXOFLOW_FILE', __FILE__);
 define('NEXOFLOW_DIR', plugin_dir_path(__FILE__));
 define('NEXOFLOW_URL', plugin_dir_url(__FILE__));
@@ -25,6 +25,7 @@ define('NEXOFLOW_DEFAULT_API_BASE', 'https://nexoflow.net');
 require_once NEXOFLOW_DIR . 'includes/class-client.php';
 require_once NEXOFLOW_DIR . 'includes/class-publisher.php';
 require_once NEXOFLOW_DIR . 'includes/class-cron.php';
+require_once NEXOFLOW_DIR . 'includes/class-rest.php';
 require_once NEXOFLOW_DIR . 'includes/class-settings.php';
 require_once NEXOFLOW_DIR . 'includes/class-plugin.php';
 

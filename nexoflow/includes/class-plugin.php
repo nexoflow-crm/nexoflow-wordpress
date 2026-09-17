@@ -12,6 +12,8 @@ class NexoFlow_Plugin
 
     private $settings;
 
+    private $rest;
+
     public static function instance()
     {
         if (self::$instance === null) {
@@ -25,6 +27,7 @@ class NexoFlow_Plugin
     {
         $this->cron = new NexoFlow_Cron();
         $this->settings = new NexoFlow_Settings();
+        $this->rest = new NexoFlow_Rest();
 
         add_action('plugins_loaded', array($this, 'init'));
         register_activation_hook(NEXOFLOW_FILE, array($this, 'activate'));
@@ -35,6 +38,7 @@ class NexoFlow_Plugin
     {
         $this->cron->register();
         $this->settings->register();
+        $this->rest->register();
     }
 
     public function activate()

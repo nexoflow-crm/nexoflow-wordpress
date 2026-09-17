@@ -25,6 +25,34 @@ class NexoFlow_Client
         return is_string($key) ? $key : '';
     }
 
+    public static function request_bearer_token()
+    {
+        $header = '';
+
+        if (isset($_SERVER['HTTP_AUTHORIZATION']) && is_string($_SERVER['HTTP_AUTHORIZATION'])) {
+            $header = $_SERVER['HTTP_AUTHORIZATION'];
+        } elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION']) && is_string($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+            $header = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+        } elseif (function_exists('getallheaders')) {
+            $headers = getallheaders();
+
+            if (is_array($headers)) {
+                foreach ($headers as $name => $value) {
+                    if (is_string($name) && strtolower($name) === 'authorization' && is_string($value)) {
+                        $header = $value;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!preg_match('/^\s*Bearer\s+(\S+)\s*$/i', $header, $matches)) {
+            return '';
+        }
+
+        return $matches[1];
+    }
+
     public static function is_valid_site_key($key)
     {
         if (!is_string($key) || $key === '' || strpos($key, ' ') !== false) {
