@@ -12,7 +12,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -35,9 +35,14 @@ jobs:
         run: make zip
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: ${{ github.ref_name }}
-          generate_release_notes: true
-          files: nexoflow.zip
-          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" nexoflow.zip --clobber
+            gh release edit "$GITHUB_REF_NAME" --draft=false --latest --title "$GITHUB_REF_NAME"
+          else
+            gh release create "$GITHUB_REF_NAME" nexoflow.zip \
+              --title "$GITHUB_REF_NAME" \
+              --generate-notes
+          fi
