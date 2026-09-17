@@ -1,0 +1,6 @@
+.DS_Store
+.idea/
+.vscode/
+nexoflow.zip
+vendor/
+.phpunit.result.cache

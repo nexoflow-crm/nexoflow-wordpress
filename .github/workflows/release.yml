@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Check plugin version matches tag
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          header="$(grep -E '^\s*\*\s*Version:' nexoflow/nexoflow.php | awk '{print $NF}')"
+          stable="$(grep -E '^Stable tag:' nexoflow/readme.txt | awk '{print $NF}')"
+          test -n "$header"
+          test "$header" = "$tag"
+          test "$stable" = "$tag"
+
+      - name: Run tests
+        run: make test
+
+      - name: Build plugin zip
+        run: make zip
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: nexoflow.zip
+          fail_on_unmatched_files: true

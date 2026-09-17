@@ -1,0 +1,188 @@
+.nexoflow-wrap {
+  max-width: 720px;
+}
+
+.nexoflow-lead {
+  margin: 4px 0 20px;
+  color: #646970;
+  font-size: 14px;
+}
+
+.nexoflow-card {
+  background: #fff;
+  border: 1px solid #dcdcde;
+  border-radius: 8px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+  padding: 20px 24px 24px;
+  margin: 0 0 16px;
+}
+
+.nexoflow-card h2,
+.nexoflow-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: normal;
+  text-transform: none;
+  color: #1d2327;
+}
+
+.nexoflow-card h2 .dashicons,
+.nexoflow-card-title .dashicons {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+  line-height: 1;
+  color: #2271b1;
+}
+
+.nexoflow-form .nexoflow-field {
+  margin: 0;
+}
+
+.nexoflow-form label {
+  display: block;
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+
+.nexoflow-key-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  max-width: 520px;
+}
+
+.nexoflow-key-row .button {
+  flex: 0 0 auto;
+  height: 36px;
+  min-height: 36px;
+}
+
+.nexoflow-key-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+  height: 36px;
+}
+
+.nexoflow-key-hint {
+  display: block;
+  margin: 8px 0 0;
+  color: #646970;
+}
+
+.nexoflow-key-hint[hidden] {
+  display: none;
+}
+
+.nexoflow-status {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 18px;
+}
+
+.nexoflow-status > div {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.nexoflow-status > div[hidden] {
+  display: none;
+}
+
+.nexoflow-status dt {
+  margin: 0;
+  color: #646970;
+  font-weight: 500;
+}
+
+.nexoflow-status dd {
+  margin: 0;
+  color: #1d2327;
+}
+
+.nexoflow-status dd a {
+  color: #2271b1;
+  text-decoration: none;
+}
+
+.nexoflow-status dd a:hover {
+  text-decoration: underline;
+}
+
+.nexoflow-pill {
+  display: inline-block;
+  min-width: 36px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.nexoflow-pill.is-yes {
+  background: #edfaef;
+  color: #1a7f37;
+}
+
+.nexoflow-pill.is-no {
+  background: #f6f7f7;
+  color: #646970;
+}
+
+.nexoflow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nexoflow-actions form,
+.nexoflow-actions p.submit {
+  margin: 0;
+}
+
+.nexoflow-button-icon,
+.button.nexoflow-button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.wp-core-ui .button.nexoflow-button-icon .dashicons,
+.wp-core-ui .button.nexoflow-button-icon .dashicons::before {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  line-height: 1;
+  margin: 0;
+  padding: 0;
+  vertical-align: middle;
+  color: inherit;
+}
+
+.wp-core-ui .button.button-primary.nexoflow-button-icon,
+.wp-core-ui .button.button-primary.nexoflow-button-icon:hover,
+.wp-core-ui .button.button-primary.nexoflow-button-icon:focus,
+.wp-core-ui .button.button-primary.nexoflow-button-icon .dashicons,
+.wp-core-ui .button.button-primary.nexoflow-button-icon .dashicons::before {
+  color: #fff;
+}
+
+.nexoflow-help {
+  margin: 8px 0 0;
+  color: #646970;
+  font-size: 13px;
+}
