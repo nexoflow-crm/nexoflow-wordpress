@@ -16,7 +16,7 @@ NexoFlow pulls publish jobs from your NexoFlow project and writes them as WordPr
 
 After you activate the plugin, open NexoFlow in the admin sidebar and paste the site connect key from your NexoFlow project. Save tests the connection. Use Test connection or Sync now later as needed.
 
-The plugin creates or updates posts, categories, tags, featured images, and common SEO title and description fields.
+The plugin creates or updates posts, categories, tags, featured images, and SEO-optimized title, meta description, and focus keyword for every article.
 
 This plugin connects to the NexoFlow service at https://nexoflow.net after an administrator pastes a site connect key. WordPress then sends that key and job acknowledgements over HTTPS. It does not track visitors. The optional sync URL only starts a pull. It does not accept post content.
 

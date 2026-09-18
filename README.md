@@ -14,7 +14,7 @@ Save tests the connection. Use **Test connection** or **Sync now** later as need
 
 ## What it writes
 
-Posts, categories, tags, featured images, and common SEO title and description fields (Yoast, Rank Math, AIOSEO).
+Posts, categories, tags, featured images, and SEO-optimized title, meta description, and focus keyword for every article (Yoast, Rank Math, AIOSEO).
 
 ## Requirements
 

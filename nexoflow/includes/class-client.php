@@ -16,8 +16,6 @@ class NexoFlow_Client
 
     const KEY_LENGTH = 53;
 
-    const LEGACY_API_BASE = 'https://app.nexoflow.net';
-
     public static function site_key()
     {
         $key = get_option('nexoflow_site_key', '');
@@ -94,7 +92,7 @@ class NexoFlow_Client
     {
         $raw = is_string($raw) ? trim($raw) : '';
 
-        if ($raw === '' || $raw === self::LEGACY_API_BASE) {
+        if ($raw === '') {
             return NEXOFLOW_DEFAULT_API_BASE;
         }
 
@@ -125,18 +123,11 @@ class NexoFlow_Client
 
     public static function api_base()
     {
-        $base = get_option('nexoflow_api_base', NEXOFLOW_DEFAULT_API_BASE);
+        $base = apply_filters('nexoflow_api_base', NEXOFLOW_DEFAULT_API_BASE);
         $base = self::sanitize_api_base(is_string($base) ? $base : '');
 
         if ($base === '') {
-            $base = NEXOFLOW_DEFAULT_API_BASE;
-        }
-
-        $base = apply_filters('nexoflow_api_base', $base);
-        $base = self::sanitize_api_base(is_string($base) ? $base : '');
-
-        if ($base === '') {
-            $base = NEXOFLOW_DEFAULT_API_BASE;
+            return NEXOFLOW_DEFAULT_API_BASE;
         }
 
         return $base;

@@ -66,7 +66,6 @@ nexoflow_assert(NexoFlow_Client::is_valid_site_key('pk_live_not_a_plugin_key_xxx
 nexoflow_assert(NexoFlow_Client::is_valid_site_key('nfwp_7c3a91e0b2d84f16a0c5e9d1b7f3082a4e6c1d9b0a8f3e2 ') === false, 'Rejects a key with a space');
 nexoflow_assert(NexoFlow_Client::is_valid_site_key('nfwp_7c3a91e0b2d84f16a0c5e9d1b7f3082a4e6c1d9b0a8f3ez5') === false, 'Rejects a non-hex key');
 nexoflow_assert(NexoFlow_Client::sanitize_api_base('') === 'https://nexoflow.net', 'Empty API base uses production');
-nexoflow_assert(NexoFlow_Client::sanitize_api_base('https://app.nexoflow.net') === 'https://nexoflow.net', 'Legacy API base migrates to production');
 nexoflow_assert(NexoFlow_Client::sanitize_api_base('https://abc.ngrok.io/') === 'https://abc.ngrok.io', 'Tunnel API base is kept');
 nexoflow_assert(NexoFlow_Client::sanitize_api_base('http://example.com') === '', 'Rejects http API base');
 nexoflow_assert(NexoFlow_Client::api_base() === 'https://nexoflow.net', 'Default API base is production');

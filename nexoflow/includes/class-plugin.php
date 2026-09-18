@@ -43,11 +43,7 @@ class NexoFlow_Plugin
 
     public function activate()
     {
-        $current_base = get_option('nexoflow_api_base', '');
-
-        if ($current_base === '' || $current_base === NexoFlow_Client::LEGACY_API_BASE) {
-            update_option('nexoflow_api_base', NEXOFLOW_DEFAULT_API_BASE, false);
-        }
+        update_option('nexoflow_api_base', NEXOFLOW_DEFAULT_API_BASE, false);
 
         $this->cron->activate();
     }
