@@ -4,7 +4,7 @@ Tags: nexoflow, publishing
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -50,6 +50,11 @@ The last error is stored and shown on the settings page. Jobs are not retried fo
 No. Uninstall removes NexoFlow settings only. Posts stay on the site.
 
 == Changelog ==
+
+= 1.0.2 =
+* Use https://nexoflow.net as the only API host.
+* Set the plugin author to fl0rentg.
+* Write SEO title, description, and focus keyword for every article.
 
 = 1.0.1 =
 * Pull jobs every minute even after a zip update.

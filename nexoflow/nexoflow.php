@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NexoFlow
  * Description: Publish NexoFlow articles to this WordPress site.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: fl0rentg
  * Author URI: https://nexoflow.net
  * License: GPLv2 or later
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('NEXOFLOW_VERSION', '1.0.1');
+define('NEXOFLOW_VERSION', '1.0.2');
 define('NEXOFLOW_FILE', __FILE__);
 define('NEXOFLOW_DIR', plugin_dir_path(__FILE__));
 define('NEXOFLOW_URL', plugin_dir_url(__FILE__));
