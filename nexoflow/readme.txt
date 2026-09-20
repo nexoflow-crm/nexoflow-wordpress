@@ -12,20 +12,49 @@ Publish NexoFlow articles to this WordPress site.
 
 == Description ==
 
-NexoFlow pulls publish jobs from your NexoFlow project and writes them as WordPress posts on this site. After you connect, WordPress checks for jobs every minute. NexoFlow can also call a signed sync URL so Publish now, autopilot, and schedules do not wait for the next site visit.
+NexoFlow connects your WordPress site to your NexoFlow project and automatically publishes AI-generated content directly to WordPress.
 
-After you activate the plugin, open NexoFlow in the admin sidebar and paste the site connect key from your NexoFlow project. Save tests the connection. Use Test connection or Sync now later as needed.
+After connecting your site with a secure site connect key, NexoFlow can create and update posts, assign categories and tags, add featured images, and apply SEO metadata including optimized titles, meta descriptions, and focus keywords.
 
-The plugin creates or updates posts, categories, tags, featured images, and SEO-optimized title, meta description, and focus keyword for every article.
+= How it works =
 
-This plugin connects to the NexoFlow service at https://nexoflow.net after an administrator pastes a site connect key. WordPress then sends that key and job acknowledgements over HTTPS. It does not track visitors. The optional sync URL only starts a pull. It does not accept post content.
+1. Install and activate the NexoFlow plugin.
+2. Open **NexoFlow** in your WordPress admin sidebar.
+3. Paste the site connect key from your NexoFlow project.
+4. Click **Save** to test the connection.
+5. Use **Test connection** or **Sync now** whenever you need to manually trigger a sync.
 
-NexoFlow terms: https://nexoflow.net/terms
-NexoFlow privacy policy: https://nexoflow.net/privacy
+Once connected, the plugin checks for pending publish jobs from NexoFlow every minute. NexoFlow can also securely trigger a sync when you publish content immediately, run an autopilot workflow, or reach a scheduled publishing time.
+
+= What NexoFlow can publish =
+
+For each article, the plugin can:
+
+* Create or update WordPress posts
+* Set the post title and content
+* Assign categories and tags
+* Upload and set featured images
+* Set SEO titles and meta descriptions
+* Set the focus keyword
+* Acknowledge completed publish jobs back to NexoFlow
+
+= Security and privacy =
+
+The plugin only connects to NexoFlow after a WordPress administrator provides a site connect key.
+
+Communication with NexoFlow takes place over HTTPS. The optional sync URL is used only to trigger the plugin to check for pending jobs. It does not receive or contain post content.
+
+The plugin does not track website visitors or add visitor analytics.
+
+NexoFlow service: https://nexoflow.net
+
+NexoFlow Terms: https://nexoflow.net/terms
+
+NexoFlow Privacy Policy: https://nexoflow.net/privacy
 
 == Installation ==
 
-1. Upload the plugin ZIP through Plugins → Add New → Upload Plugin.
+1. In WordPress go to Plugins → Add New, search for NexoFlow, and install it.
 2. Activate NexoFlow.
 3. Open NexoFlow in the admin sidebar.
 4. Create a WordPress project in NexoFlow, copy the site connect key, paste it here.
