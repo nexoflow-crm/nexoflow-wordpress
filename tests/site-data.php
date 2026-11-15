@@ -92,7 +92,7 @@ $nexoflow_site_data = new NexoFlow_Site_Data();
 
 nexoflow_assert($nexoflow_site_data->refresh(true, $nexoflow_client) === false && $nexoflow_client->asked === array(), 'A site that is not connected asks NexoFlow for nothing');
 
-update_option('nexoflow_site_key', 'nfwp_7c3a91e0b2d84f16a0c5e9d1b7f3082a4e6c1d9b0a8f3e25');
+update_option('nexoflow_site_key', 'nfwp_0123456789abcdef0123456789abcdef0123456789abcd25');
 nexoflow_assert($nexoflow_site_data->refresh(false, $nexoflow_client) === true, 'A connected site fetches both the first time');
 nexoflow_assert($nexoflow_client->asked === array(array('structured-data', ''), array('llms-txt', '')), 'The first fetch holds no version yet');
 $nexoflow_summary = NexoFlow_Site_Data::summary();

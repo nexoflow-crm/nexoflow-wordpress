@@ -4,7 +4,7 @@ Connect your WordPress site to [NexoFlow](https://nexoflow.net) and automaticall
 
 NexoFlow for WordPress acts as the bridge between your WordPress site and NexoFlow. Once connected, NexoFlow can create and update posts, assign categories and tags, publish featured images, and apply SEO metadata to your articles.
 
-From version 1.1.0 the plugin is also the execution layer for the **NexoFlow Website Agent**: NexoFlow can ask the site what it is able to do and carry out a small, fixed set of page operations on it. New pages are drafts. From version 1.2.0 a published page or the homepage can be changed too, only when the request says so and its previous version can be kept. Version 1.3.0 adds changing a section in place, the header and footer of a block theme, and adding images to the media library. See [Website Agent](#website-agent).
+The plugin is also the execution layer for the **NexoFlow Website Agent**: NexoFlow can ask the site what it is able to do and carry out a small, fixed set of page operations on it. New pages are drafts. A published page, the homepage, the header or the footer is changed only when the request says so and its previous version can be kept. See [Website Agent](#website-agent).
 
 ## Features
 
@@ -67,11 +67,11 @@ The plugin will test the connection when the key is saved.
 
 ### From Source
 
-Clone the repository into your WordPress plugins directory:
+Clone the repository and copy its `nexoflow` folder into your WordPress plugins directory:
 
 ```bash
-cd wp-content/plugins
-git clone https://github.com/YOUR-ORG/YOUR-REPO.git nexoflow
+git clone https://github.com/nexoflow-crm/nexoflow-wordpress.git
+cp -R nexoflow-wordpress/nexoflow /path/to/wordpress/wp-content/plugins/nexoflow
 ```
 
 Activate the plugin from **WordPress → Plugins**.
@@ -154,7 +154,7 @@ Use **Test connection** to verify the connection or **Sync now** to immediately 
 
 The Website Agent lets a NexoFlow user say what they want done to their website and have NexoFlow do it on the connected WordPress site.
 
-NexoFlow is the intelligence layer. This plugin is the secure execution layer. The plugin never reasons, never calls an AI provider and never handles credits. Its whole job is:
+NexoFlow is the intelligence layer. This plugin is the secure execution layer. The plugin never reasons, never calls an AI provider and never handles billing. Its whole job is:
 
 **authenticate, discover capabilities, authorize, validate, execute, return a result.**
 
@@ -162,7 +162,7 @@ NexoFlow is the intelligence layer. This plugin is the secure execution layer. T
                  NEXOFLOW
                      │
               AI Website Agent
-        (reasoning, planning, credits)
+        (reasoning and planning)    
                      │
                Action request
                      ▼
@@ -182,7 +182,7 @@ NexoFlow is the intelligence layer. This plugin is the secure execution layer. T
                   WEBSITE
 ```
 
-### What is implemented and what is planned
+### What the Website Agent can do
 
 | Area | Status |
 | --- | --- |
@@ -203,20 +203,11 @@ NexoFlow is the intelligence layer. This plugin is the secure execution layer. T
 | Header, footer and other template parts of a block theme, through the same `templates.*` actions with `kind: part` | **Implemented** for top-level blocks |
 | `media.upload` (add an image to the media library) | **Implemented** for JPEG, PNG, WebP and GIF |
 | `elementor.inspect` (element tree through Elementor's own ability) | **Implemented**, run against Elementor 4.3.4 |
-| `elementor.guide`, `elementor.create_page`, `elementor.build`, `elementor.publish` (build pages through Elementor's own abilities) | **Implemented** (1.4.0), run against Elementor 4.3.4 on WordPress 6.9.4, on a classic and a block theme |
-| `site.set_front_page` (choose the homepage, and put the earlier one back) | **Implemented** (1.4.0) |
+| `elementor.guide`, `elementor.create_page`, `elementor.build`, `elementor.publish` (build pages through Elementor's own abilities) | **Implemented**, tested with Elementor 4.3.4 on a classic and a block theme |
+| `site.set_front_page` (choose the homepage, and put the earlier one back) | **Implemented** |
 | Diagnostics card in the WordPress admin | **Implemented** |
-| Activity log with plain-word reasons and a report to copy for support (never the site connect key) | **Implemented** (1.3.2) |
-| Elementor setup step with a button to Elementor's own MCP page, found in the admin menu | **Implemented** (1.3.2) |
-| Block changes: remove, and changing or inserting inside another block | Planned |
-| Design context: theme colors, fonts and ready-made sections (patterns) | Planned |
-| Other media: video, documents, SVG, and choosing from images already in the library | Planned |
-| Navigation menus stored on their own (`wp_navigation`) | Planned. Links written into the header itself work today. |
-| Elementor changes: create page, build sections, update elements | Planned. Detection already reports which Elementor abilities exist. |
-| Publishing a draft | Planned. Needs an explicit NexoFlow capability and WordPress permission. |
-| Other post types, WooCommerce, SEO fields, internal links | Planned |
-| Block editor sidebar that uses the same actions | Planned |
-| Other builders (Bricks, Divi, Beaver Builder, WPBakery) | Planned. They plug in as providers. |
+| Activity log with plain-word reasons and a report to copy for support (never the site connect key) | **Implemented** |
+| Elementor setup step with a button to Elementor's own MCP page, found in the admin menu | **Implemented** |
 
 ### Authentication
 
@@ -228,7 +219,7 @@ The plugin gives each site an identifier, `site.id`, returned by capability disc
 
 ### Acting account
 
-WordPress permissions belong to WordPress users, so the agent works as one. The administrator who saves the site connect key becomes the acting account. Sites connected before 1.1.0 use their first administrator. An administrator can change this on the NexoFlow settings page with **Work as my account**.
+WordPress permissions belong to WordPress users, so the agent works as one. The administrator who saves the site connect key becomes the acting account. Sites with no recorded account use their first administrator. An administrator can change this on the NexoFlow settings page with **Work as my account**.
 
 Every action runs as that account and is checked with `current_user_can()` against the actual page. If the account is deleted or loses a permission, the matching capabilities stop being offered.
 
@@ -244,7 +235,7 @@ Returns what this specific site can do right now:
 {
   "success": true,
   "api_version": "1",
-  "plugin": { "version": "1.4.0" },
+  "plugin": { "version": "2.0.0" },
   "site": { "id": "nfsite_3f9c…", "connected": true, "url": "https://example.com/", "language": "en-US", "front_page": { "show": "page", "page_id": 2, "template": null } },
   "wordpress": { "version": "6.9", "php_version": "8.3.6" },
   "theme": { "name": "Hello Elementor", "block_theme": false, "template_parts": [] },
@@ -507,7 +498,7 @@ Also in `live` mode:
 * Every block that is not replaced, and the whitespace between blocks, comes through byte for byte.
 * One section can be replaced by several blocks. A section cannot be named twice in one request.
 * To change a section, read it with `include_markup`, change that markup, and send it back.
-* From 1.3.1 a replacement can take a section away instead: `{ "path": "5", "remove": true }`, with `content` left out. This is how a page is rebuilt with fewer sections than it had: the first sections are swapped for the new ones and the rest are taken away, in one request with one restore point. A request that would leave nothing on the page is refused (`replacements: removes_everything`). The result reports `replaced: { sections, blocks, removed }`.
+* A replacement can take a section away instead: `{ "path": "5", "remove": true }`, with `content` left out. This is how a page is rebuilt with fewer sections than it had: the first sections are swapped for the new ones and the rest are taken away, in one request with one restore point. A request that would leave nothing on the page is refused (`replacements: removes_everything`). The result reports `replaced: { sections, blocks, removed }`.
 
 `templates.replace` does the same for a template or template part.
 
@@ -602,7 +593,6 @@ Every action that changes a page (`pages.update`, `pages.restore`, `blocks.inser
 
 A page that is open in the WordPress editor is refused with `CONTENT_LOCKED`.
 
-Planned: a builder document version folded into the revision for builders that keep their layout outside the post.
 
 ### Security model
 
@@ -614,11 +604,11 @@ Planned: a builder document version folded into the revision for builders that k
 * **Record.** Every change request, and every well-formed request that was refused, is recorded with its action, outcome and `authorization_id`. Successful reads are not recorded.
 * **No caching.** Website Agent answers are sent with `Cache-Control: no-store`.
 
-### Credit architecture
+### AI and billing
 
-NexoFlow owns the AI and the credits. The plugin has no AI provider setting, stores no AI provider key and never contacts an AI provider.
+NexoFlow does the AI work. The plugin has no AI provider setting, stores no AI provider key and never contacts an AI provider.
 
-The plugin does not know about credit balances, prices, reservations or refunds. A `credits` field in a request is refused like any other unknown field, so it can never be treated as authorization. NexoFlow estimates, reserves and finalizes credits on its side, and sends `authorization_id` only as a reference that the plugin stores and returns.
+The plugin knows nothing about billing. A `credits` field in a request is refused like any other unknown field, so it can never be treated as authorization. NexoFlow may send an `authorization_id`, which the plugin only stores and returns as a reference.
 
 ### Adding a builder
 
@@ -626,7 +616,7 @@ A builder is a class that implements `NexoFlow_Agent_Builder` and is added with 
 
 ## Structured Data and llms.txt
 
-From version 1.4.0 a connected site carries two things NexoFlow keeps current for it. Both come from the business's own records in NexoFlow; the plugin never writes them itself.
+A connected site carries two things NexoFlow keeps current for it. Both come from the business's own records in NexoFlow; the plugin never writes them itself.
 
 | | What the site does | Where it comes from |
 |---|---|---|
@@ -754,14 +744,14 @@ NexoFlow can also trigger a sync directly for scheduled publishing, reducing the
 Clone the repository:
 
 ```bash
-git clone https://github.com/YOUR-ORG/YOUR-REPO.git
-cd YOUR-REPO
+git clone https://github.com/nexoflow-crm/nexoflow-wordpress.git
+cd nexoflow-wordpress
 ```
 
 Install the plugin in a local WordPress installation:
 
 ```bash
-cp -R . /path/to/wordpress/wp-content/plugins/nexoflow
+cp -R nexoflow /path/to/wordpress/wp-content/plugins/nexoflow
 ```
 
 Activate it from the WordPress admin dashboard.
@@ -788,6 +778,11 @@ nexoflow/
 │   ├── class-auth.php          Checks the key on incoming requests
 │   ├── class-cron.php          Pulls publish jobs
 │   ├── class-site-data.php     Prints structured data and serves llms.txt
+│   ├── class-seo.php           Search titles, descriptions, canonicals, archives, redirects, Trash
+│   ├── class-seo-markup.php    Search and link-preview tags in the page head
+│   ├── class-page-cache.php    Page cache, only when asked for
+│   ├── class-indexnow.php      Change notices to search engines
+│   ├── class-bing.php          Bing's verification tag
 │   ├── class-publisher.php     Creates and updates posts
 │   ├── class-rest.php          Sync route
 │   ├── class-settings.php      Settings page
@@ -812,6 +807,7 @@ nexoflow/
 │           ├── class-provider-wordpress.php
 │           ├── class-provider-gutenberg.php
 │           ├── class-provider-media.php
+│           ├── class-provider-seo.php
 │           └── class-provider-elementor.php
 ├── assets/
 ├── nexoflow.php

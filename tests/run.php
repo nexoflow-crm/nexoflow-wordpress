@@ -57,14 +57,14 @@ nexoflow_assert(NexoFlow_Publisher::is_safe_image_url('https://169.254.1.1/image
 nexoflow_assert(NexoFlow_Publisher::is_safe_image_url('https://localhost/image.webp') === false, 'Rejects localhost image URL');
 nexoflow_assert(NexoFlow_Publisher::is_safe_image_url('https://example.com/image.webp') === true, 'Accepts public https image URL');
 
-$valid_key = 'nfwp_7c3a91e0b2d84f16a0c5e9d1b7f3082a4e6c1d9b0a8f3e25';
+$valid_key = 'nfwp_0123456789abcdef0123456789abcdef0123456789abcd25';
 nexoflow_assert(NexoFlow_Client::is_valid_site_key($valid_key) === true, 'Accepts nfwp_ plus 48 hex chars');
 nexoflow_assert(NexoFlow_Client::is_valid_site_key('a') === false, 'Rejects a one-letter key');
 nexoflow_assert(NexoFlow_Client::is_valid_site_key('') === false, 'Rejects an empty key');
-nexoflow_assert(NexoFlow_Client::is_valid_site_key('nfwp_7c3a91e0b2d84f16a0c5e9d1b7f3082a4e6c1d9b0a8f3e2') === false, 'Rejects a short key');
+nexoflow_assert(NexoFlow_Client::is_valid_site_key('nfwp_0123456789abcdef0123456789abcdef0123456789abcd2') === false, 'Rejects a short key');
 nexoflow_assert(NexoFlow_Client::is_valid_site_key('pk_live_not_a_plugin_key_xxxxxxxxxxxx') === false, 'Rejects a Content API key');
-nexoflow_assert(NexoFlow_Client::is_valid_site_key('nfwp_7c3a91e0b2d84f16a0c5e9d1b7f3082a4e6c1d9b0a8f3e2 ') === false, 'Rejects a key with a space');
-nexoflow_assert(NexoFlow_Client::is_valid_site_key('nfwp_7c3a91e0b2d84f16a0c5e9d1b7f3082a4e6c1d9b0a8f3ez5') === false, 'Rejects a non-hex key');
+nexoflow_assert(NexoFlow_Client::is_valid_site_key('nfwp_0123456789abcdef0123456789abcdef0123456789abcd2 ') === false, 'Rejects a key with a space');
+nexoflow_assert(NexoFlow_Client::is_valid_site_key('nfwp_0123456789abcdef0123456789abcdef0123456789abcdz5') === false, 'Rejects a non-hex key');
 nexoflow_assert(NexoFlow_Client::sanitize_api_base('') === 'https://nexoflow.net', 'Empty API base uses production');
 nexoflow_assert(NexoFlow_Client::sanitize_api_base('https://abc.ngrok.io/') === 'https://abc.ngrok.io', 'Tunnel API base is kept');
 nexoflow_assert(NexoFlow_Client::sanitize_api_base('http://example.com') === '', 'Rejects http API base');
@@ -88,16 +88,16 @@ $health = array(
     'ok' => true,
     'project' => array(
         'name' => 'Garage',
-        'websiteUrl' => 'https://theknollgaragedoor.com',
-        'wordpressUrl' => 'https://theknollgaragedoor.com',
+        'websiteUrl' => 'https://summit.example',
+        'wordpressUrl' => 'https://summit.example',
         'email' => 'hidden@example.com',
         'billing' => 'do-not-store',
     ),
 );
 $card = NexoFlow_Client::project_from_health($health);
 nexoflow_assert($card['name'] === 'Garage', 'Health card keeps the project name');
-nexoflow_assert($card['websiteUrl'] === 'https://theknollgaragedoor.com', 'Health card keeps the website URL');
-nexoflow_assert($card['wordpressUrl'] === 'https://theknollgaragedoor.com', 'Health card keeps the WordPress URL');
+nexoflow_assert($card['websiteUrl'] === 'https://summit.example', 'Health card keeps the website URL');
+nexoflow_assert($card['wordpressUrl'] === 'https://summit.example', 'Health card keeps the WordPress URL');
 nexoflow_assert(!isset($card['email']) && !isset($card['billing']), 'Health card drops unsafe fields');
 nexoflow_assert(NexoFlow_Client::project_from_health(array('ok' => false, 'error' => 'Invalid site connect key.')) === array(), 'Rejected health has no project card');
 $split = NexoFlow_Client::project_from_health(
@@ -105,8 +105,8 @@ $split = NexoFlow_Client::project_from_health(
         'ok' => true,
         'project' => array(
             'name' => 'Garage',
-            'websiteUrl' => 'https://theknollgaragedoor.com',
-            'wordpressUrl' => 'https://wp.theknollgaragedoor.com',
+            'websiteUrl' => 'https://summit.example',
+            'wordpressUrl' => 'https://wp.summit.example',
         ),
     )
 );
