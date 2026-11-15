@@ -8,6 +8,9 @@ class NexoFlow_Cron
 {
     const HOOK = 'nexoflow_sync_event';
 
+    /** The event the plugin from NexoFlow's own download (1.0.0 to 1.2.5) scheduled. Nothing answers it any more. */
+    const LEGACY_HOOK = 'nexoflow_sync_jobs';
+
     const MAX_ATTEMPTS = 5;
 
     public function register()
@@ -39,6 +42,11 @@ class NexoFlow_Cron
 
     public function ensure_scheduled()
     {
+        // A site updated from NexoFlow's own download still has its old once-a-minute event; it is cleared once.
+        if (wp_next_scheduled(self::LEGACY_HOOK)) {
+            wp_clear_scheduled_hook(self::LEGACY_HOOK);
+        }
+
         if (wp_next_scheduled(self::HOOK)) {
             return;
         }
@@ -75,6 +83,11 @@ class NexoFlow_Cron
 
         update_option('nexoflow_last_error', '', false);
         update_option('nexoflow_connected', 1, false);
+
+        // The key the site serves as /<key>.txt for change notices to search engines.
+        NexoFlow_IndexNow::keep_key($result);
+        // Bing's code for the site, printed as Bing's verification tag on the homepage.
+        NexoFlow_Bing::keep_code($result);
 
         $jobs = isset($result['jobs']) && is_array($result['jobs']) ? $result['jobs'] : array();
         $publisher = new NexoFlow_Publisher();

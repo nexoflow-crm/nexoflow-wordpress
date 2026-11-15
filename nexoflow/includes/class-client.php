@@ -16,28 +16,58 @@ class NexoFlow_Client
 
     const KEY_LENGTH = 53;
 
+    /**
+     * Where the plugin served by NexoFlow's own download (1.0.0 to 1.2.5, the same "nexoflow" folder) kept the key.
+     */
+    const LEGACY_KEY_OPTION = 'nexoflow_site_connect_key';
+
     public static function site_key()
     {
         $key = get_option('nexoflow_site_key', '');
 
+        if (!is_string($key) || $key === '') {
+            $key = self::adopt_legacy_site_key();
+        }
+
         return is_string($key) ? $key : '';
+    }
+
+    /**
+     * A site updated from NexoFlow's own download still has its key under the old option. The first read after the
+     * update moves a well-formed one across, so the site stays connected with nothing to paste again. The old option
+     * is removed once moved, so a later Disconnect is never undone by it.
+     */
+    public static function adopt_legacy_site_key()
+    {
+        $legacy = get_option(self::LEGACY_KEY_OPTION, '');
+        $legacy = is_string($legacy) ? trim($legacy) : '';
+
+        if (!self::is_valid_site_key($legacy)) {
+            return '';
+        }
+
+        update_option('nexoflow_site_key', $legacy, false);
+        delete_option(self::LEGACY_KEY_OPTION);
+
+        return $legacy;
     }
 
     public static function request_bearer_token()
     {
         $header = '';
 
+        // The header is unslashed and cleaned like any other input before it is read.
         if (isset($_SERVER['HTTP_AUTHORIZATION']) && is_string($_SERVER['HTTP_AUTHORIZATION'])) {
-            $header = $_SERVER['HTTP_AUTHORIZATION'];
+            $header = sanitize_text_field(wp_unslash($_SERVER['HTTP_AUTHORIZATION']));
         } elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION']) && is_string($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
-            $header = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+            $header = sanitize_text_field(wp_unslash($_SERVER['REDIRECT_HTTP_AUTHORIZATION']));
         } elseif (function_exists('getallheaders')) {
             $headers = getallheaders();
 
             if (is_array($headers)) {
                 foreach ($headers as $name => $value) {
                     if (is_string($name) && strtolower($name) === 'authorization' && is_string($value)) {
-                        $header = $value;
+                        $header = sanitize_text_field($value);
                         break;
                     }
                 }
@@ -214,6 +244,28 @@ class NexoFlow_Client
         }
 
         return array('jobs' => $jobs);
+    }
+
+    /**
+     * The JSON-LD for the site's pages. With the version the site already
+     * holds, NexoFlow answers "unchanged" without sending the pages again.
+     */
+    public function get_structured_data($held_version = '')
+    {
+        return $this->request('GET', '/api/v1/wordpress-plugin/structured-data' . self::version_query($held_version));
+    }
+
+    /** The site's llms.txt, the same way. */
+    public function get_llms_txt($held_version = '')
+    {
+        return $this->request('GET', '/api/v1/wordpress-plugin/llms-txt' . self::version_query($held_version));
+    }
+
+    private static function version_query($version)
+    {
+        $version = is_string($version) ? $version : '';
+
+        return preg_match('/^[A-Za-z0-9_-]{1,64}$/', $version) ? '?version=' . rawurlencode($version) : '';
     }
 
     public function ack($job_id, $body)

@@ -2,6 +2,39 @@
   max-width: 720px;
 }
 
+/* Settings on the left, what happened on the right. One column on a narrow screen. */
+.nexoflow-wrap.has-side {
+  max-width: 1240px;
+}
+
+.nexoflow-wrap.has-side .nexoflow-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 720px) minmax(300px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.nexoflow-side {
+  position: sticky;
+  top: 48px;
+  min-width: 0;
+}
+
+.nexoflow-main {
+  min-width: 0;
+}
+
+/* Two columns fit from about 1100px of window: the cards shrink before the log drops below them. */
+@media (max-width: 1100px) {
+  .nexoflow-wrap.has-side .nexoflow-layout {
+    grid-template-columns: minmax(0, 720px);
+  }
+
+  .nexoflow-side {
+    position: static;
+  }
+}
+
 .nexoflow-lead {
   margin: 4px 0 20px;
   color: #646970;
@@ -15,6 +48,8 @@
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
   padding: 20px 24px 24px;
   margin: 0 0 16px;
+  /* A message brings the page back to its card: keep the card clear of the admin bar. */
+  scroll-margin-top: 48px;
 }
 
 .nexoflow-card h2,
@@ -52,26 +87,35 @@
   font-weight: 600;
 }
 
+/*
+ * The key, Save and Disconnect on one row. Nothing here has a fixed height: the
+ * row stretches the buttons to the field, so they line up whatever height the
+ * WordPress version on the site gives a field.
+ */
 .nexoflow-key-row {
   display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: stretch;
   gap: 8px;
-  max-width: 520px;
+  max-width: 640px;
 }
 
-.nexoflow-key-row .button {
+.nexoflow-wrap .nexoflow-key-row .button {
   flex: 0 0 auto;
-  height: 36px;
+  align-self: stretch;
+  height: auto;
   min-height: 36px;
+  margin: 0;
 }
 
-.nexoflow-key-input {
-  flex: 1 1 auto;
+.nexoflow-wrap .nexoflow-key-row .nexoflow-key-input {
+  flex: 1 1 220px;
   min-width: 0;
-  width: 100%;
+  width: auto;
   max-width: none;
-  height: 36px;
+  height: auto;
+  min-height: 36px;
+  margin: 0;
 }
 
 .nexoflow-key-hint {
@@ -84,8 +128,8 @@
   display: none;
 }
 
-.nexoflow-disconnect {
-  margin: 12px 0 0;
+.nexoflow-disconnect[hidden] {
+  display: none;
 }
 
 .nexoflow-status {
@@ -188,4 +232,295 @@
   margin: 8px 0 0;
   color: #646970;
   font-size: 13px;
+}
+
+.nexoflow-card-lead {
+  margin: -8px 0 16px;
+  color: #646970;
+}
+
+.nexoflow-card-subtitle {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d2327;
+}
+
+.nexoflow-muted {
+  color: #646970;
+}
+
+.nexoflow-capabilities,
+.nexoflow-requests {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.nexoflow-capabilities li,
+.nexoflow-requests li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+}
+
+.nexoflow-capabilities code,
+.nexoflow-requests code {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #edfaef;
+  color: #1a7f37;
+  font-size: 12px;
+}
+
+.nexoflow-capabilities .is-no code,
+.nexoflow-requests code {
+  background: #f6f7f7;
+  color: #646970;
+}
+
+.nexoflow-capabilities .is-no span {
+  color: #646970;
+}
+
+/* The result of an action, shown in the card whose button was pressed. */
+.nexoflow-notice {
+  /* The page comes back scrolled to the message, with some of its card above it. */
+  scroll-margin-top: 160px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid #b8e6bf;
+  border-radius: 6px;
+  background: #edfaef;
+  color: #0a5a1d;
+}
+
+.nexoflow-notice.is-error {
+  border-color: #f1aeb5;
+  background: #fcf0f1;
+  color: #8a1f11;
+}
+
+.nexoflow-notice p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.nexoflow-notice .dashicons {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  margin-top: 1px;
+}
+
+/* Under the key row it needs air above it and none below: the card's own padding follows. */
+.nexoflow-form + .nexoflow-notice {
+  margin: 12px 0 0;
+}
+
+.nexoflow-notice:focus {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* A setup step with the button that goes straight to it. */
+.nexoflow-setup {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid #f0c33c;
+  border-radius: 6px;
+  background: #fcf9e8;
+  scroll-margin-top: 48px;
+}
+
+.nexoflow-setup.is-ready {
+  border-color: #b8e6bf;
+  background: #edfaef;
+}
+
+.nexoflow-setup-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1d2327;
+}
+
+.nexoflow-setup-title .dashicons {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  color: #996800;
+}
+
+.nexoflow-setup.is-ready .nexoflow-setup-title .dashicons {
+  color: #1a7f37;
+}
+
+.nexoflow-setup p {
+  margin: 0 0 8px;
+  color: #3c434a;
+}
+
+.nexoflow-setup ol {
+  margin: 0 0 12px 18px;
+  color: #3c434a;
+}
+
+.nexoflow-setup ol li {
+  margin: 0 0 4px;
+}
+
+.nexoflow-setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.nexoflow-setup .nexoflow-setup-problem {
+  margin: 8px 0 0;
+  color: #8a1f11;
+}
+
+.nexoflow-setup .nexoflow-setup-problem[hidden] {
+  display: none;
+}
+
+.nexoflow-setup.is-ready p:last-child {
+  margin-bottom: 0;
+}
+
+/* Activity: what NexoFlow did on this site. */
+.nexoflow-log {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  max-height: 560px;
+  overflow-y: auto;
+  border-top: 1px solid #f0f0f1;
+}
+
+.nexoflow-log li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 2px;
+  border-bottom: 1px solid #f0f0f1;
+}
+
+.nexoflow-log-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: #1a7f37;
+}
+
+.nexoflow-log .is-bad .nexoflow-log-dot {
+  background: #d63638;
+}
+
+.nexoflow-log .is-run .nexoflow-log-dot {
+  background: #dba617;
+}
+
+.nexoflow-log-body {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.nexoflow-log-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nexoflow-log-title strong {
+  font-weight: 600;
+  color: #1d2327;
+}
+
+.nexoflow-log-title a,
+.nexoflow-log-target {
+  margin-left: 4px;
+}
+
+.nexoflow-log-meta {
+  color: #646970;
+  font-size: 12px;
+}
+
+.nexoflow-log-meta code {
+  margin-left: 4px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: #f6f7f7;
+  color: #646970;
+  font-size: 11px;
+}
+
+.nexoflow-log-problem {
+  margin-top: 2px;
+  color: #8a1f11;
+}
+
+.nexoflow-log.is-problems-only .is-ok,
+.nexoflow-log.is-problems-only .is-run {
+  display: none;
+}
+
+.nexoflow-activity-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.nexoflow-log-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #3c434a;
+  line-height: 1.4;
+}
+
+/* WordPress nudges a checkbox up to sit on a line of text; centred in a row it needs no nudge. */
+.nexoflow-wrap .nexoflow-log-filter input[type="checkbox"] {
+  flex: none;
+  margin: 0;
+}
+
+.nexoflow-report-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+}
+
+/* Kept on the page so it can be copied; shown only if copying is not possible. */
+.nexoflow-report {
+  display: none;
+  width: 100%;
+  margin-top: 10px;
+  font-family: Menlo, Consolas, monospace;
+  font-size: 11px;
+}
+
+.nexoflow-report.is-shown {
+  display: block;
 }

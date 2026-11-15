@@ -75,6 +75,14 @@ nexoflow_assert(NexoFlow_Client::request_bearer_token() === $valid_key, 'Reads a
 $_SERVER['HTTP_AUTHORIZATION'] = 'Basic nope';
 nexoflow_assert(NexoFlow_Client::request_bearer_token() === '', 'Rejects a non-Bearer header');
 unset($_SERVER['HTTP_AUTHORIZATION']);
+$_SERVER['REDIRECT_HTTP_AUTHORIZATION'] = "  Bearer " . $valid_key . " \n";
+nexoflow_assert(NexoFlow_Client::request_bearer_token() === $valid_key, 'Reads a Bearer token a server passed on under its other name, cleaned of stray whitespace');
+unset($_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
+$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer <script>alert(1)</script>';
+nexoflow_assert(!NexoFlow_Client::is_valid_site_key(NexoFlow_Client::request_bearer_token()) && strpos(NexoFlow_Client::request_bearer_token(), '<') === false, 'A header carrying markup is cleaned and is never a key');
+$_SERVER['HTTP_AUTHORIZATION'] = addslashes("Bearer it's\\not");
+nexoflow_assert(NexoFlow_Client::request_bearer_token() === "it's\\not", 'The header is read without the slashes WordPress adds to it');
+unset($_SERVER['HTTP_AUTHORIZATION']);
 
 $health = array(
     'ok' => true,
@@ -144,6 +152,32 @@ nexoflow_assert(!empty($second['ok']), 'Second upsert succeeds');
 nexoflow_assert((int) $second['wordpressPostId'] === 1, 'Second upsert updates the same post');
 nexoflow_assert(count($GLOBALS['nexoflow_posts']) === 1, 'Second upsert does not duplicate the post');
 nexoflow_assert($GLOBALS['nexoflow_posts'][1]['post_title'] === 'Why the opener failed (updated)', 'Second upsert changes the title');
+
+// A site updated from NexoFlow's own download keeps its key under the old option: it is moved across on first read.
+$saved_options = $GLOBALS['nexoflow_options'];
+$GLOBALS['nexoflow_options'] = array('nexoflow_site_connect_key' => ' ' . $valid_key . ' ');
+nexoflow_assert(NexoFlow_Client::site_key() === $valid_key, 'A key from the old download is read after the update');
+nexoflow_assert(($GLOBALS['nexoflow_options']['nexoflow_site_key'] ?? '') === $valid_key, 'It is saved under the current option');
+nexoflow_assert(!array_key_exists('nexoflow_site_connect_key', $GLOBALS['nexoflow_options']), 'The old option is removed once moved');
+nexoflow_assert(NexoFlow_Client::has_site_key() === true, 'The site counts as connected');
+
+$GLOBALS['nexoflow_options'] = array('nexoflow_site_connect_key' => 'not-a-key');
+nexoflow_assert(NexoFlow_Client::site_key() === '', 'A malformed old key is not moved');
+nexoflow_assert(!array_key_exists('nexoflow_site_key', $GLOBALS['nexoflow_options']), 'Nothing is saved for it');
+
+$other_key = 'nfwp_' . str_repeat('ab', 24);
+$GLOBALS['nexoflow_options'] = array('nexoflow_site_key' => $other_key, 'nexoflow_site_connect_key' => $valid_key);
+nexoflow_assert(NexoFlow_Client::site_key() === $other_key, 'A key saved in this version wins over the old one');
+
+$GLOBALS['nexoflow_options'] = array();
+nexoflow_assert(NexoFlow_Client::site_key() === '', 'With neither, there is no key');
+$GLOBALS['nexoflow_options'] = $saved_options;
+
+require __DIR__ . '/agent.php';
+require __DIR__ . '/site-data.php';
+require __DIR__ . '/indexnow.php';
+require __DIR__ . '/bing.php';
+require __DIR__ . '/seo.php';
 
 if ($failed > 0) {
     echo "\n{$failed} failed\n";

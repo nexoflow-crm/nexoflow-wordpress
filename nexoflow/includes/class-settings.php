@@ -10,6 +10,8 @@ class NexoFlow_Settings
 
     const MAX_KEY_LENGTH = 53;
 
+    private $pending = null;
+
     public function register()
     {
         add_action('admin_menu', array($this, 'menu'));
@@ -19,7 +21,6 @@ class NexoFlow_Settings
         add_action('admin_post_nexoflow_test_connection', array($this, 'test_connection'));
         add_action('admin_post_nexoflow_sync_now', array($this, 'sync_now'));
         add_action('admin_post_nexoflow_disconnect', array($this, 'disconnect'));
-        add_action('admin_notices', array($this, 'notices'));
     }
 
     public function menu()
@@ -30,9 +31,21 @@ class NexoFlow_Settings
             'manage_options',
             self::PAGE,
             array($this, 'render'),
-            NEXOFLOW_URL . 'assets/nexoflow-menu-icon.png',
+            NEXOFLOW_URL . 'assets/nexoflow-menu-icon.png?ver=' . self::asset_version('assets/nexoflow-menu-icon.png'),
             58
         );
+    }
+
+    /**
+     * The plugin version plus the file's own change time, so a browser never keeps showing an older copy of a
+     * file that changed under the same plugin version (a zip uploaded again, a site updated in place).
+     */
+    public static function asset_version($relative_path)
+    {
+        $path = NEXOFLOW_DIR . $relative_path;
+        $changed = is_readable($path) ? (int) filemtime($path) : 0;
+
+        return $changed > 0 ? NEXOFLOW_VERSION . '.' . $changed : NEXOFLOW_VERSION;
     }
 
     public function menu_assets()
@@ -41,7 +54,7 @@ class NexoFlow_Settings
             'nexoflow-admin-menu',
             NEXOFLOW_URL . 'assets/admin-menu.css',
             array(),
-            NEXOFLOW_VERSION
+            self::asset_version('assets/admin-menu.css')
         );
     }
 
@@ -56,14 +69,14 @@ class NexoFlow_Settings
             'nexoflow-admin',
             NEXOFLOW_URL . 'assets/admin.css',
             array('dashicons', 'buttons'),
-            NEXOFLOW_VERSION
+            self::asset_version('assets/admin.css')
         );
 
         wp_enqueue_script(
             'nexoflow-admin',
             NEXOFLOW_URL . 'assets/admin.js',
             array(),
-            NEXOFLOW_VERSION,
+            self::asset_version('assets/admin.js'),
             true
         );
     }
@@ -80,13 +93,18 @@ class NexoFlow_Settings
         $project = $connected ? NexoFlow_Client::stored_project() : array();
         $last_sync = (int) get_option('nexoflow_last_sync', 0);
         $last_error = (string) get_option('nexoflow_last_error', '');
+        $site_data = NexoFlow_Site_Data::summary();
         $save_url = admin_url('admin-post.php');
+        $has_side = has_action('nexoflow_settings_side') !== false;
+        $this->pending = $this->take_notice();
         ?>
-        <div class="wrap nexoflow-wrap">
+        <div class="wrap nexoflow-wrap<?php echo $has_side ? ' has-side' : ''; ?>">
             <h1><?php echo esc_html__('NexoFlow', 'nexoflow'); ?></h1>
             <p class="nexoflow-lead"><?php echo esc_html__('Publish NexoFlow articles to this WordPress site.', 'nexoflow'); ?></p>
 
-            <div class="nexoflow-card">
+            <div class="nexoflow-layout">
+            <div class="nexoflow-main">
+            <div class="nexoflow-card" id="nexoflow-card-connection">
                 <h2 class="nexoflow-card-title">
                     <span class="dashicons dashicons-admin-links" aria-hidden="true"></span>
                     <?php echo esc_html__('Connection', 'nexoflow'); ?>
@@ -111,6 +129,13 @@ class NexoFlow_Settings
                                 <span class="dashicons dashicons-saved" aria-hidden="true"></span>
                                 <?php echo esc_html__('Save', 'nexoflow'); ?>
                             </button>
+                            <?php if ($has_key) : ?>
+                                <?php // Sits beside Save, but belongs to the disconnect form below. ?>
+                                <button type="submit" form="nexoflow-disconnect-form" class="button button-secondary nexoflow-button-icon">
+                                    <span class="dashicons dashicons-no" aria-hidden="true"></span>
+                                    <?php echo esc_html__('Disconnect', 'nexoflow'); ?>
+                                </button>
+                            <?php endif; ?>
                         </span>
                     </p>
                     <?php if ($has_key && $suffix !== '') : ?>
@@ -120,19 +145,16 @@ class NexoFlow_Settings
                         ?></p>
                     <?php endif; ?>
                 </form>
+                <?php $this->inline_notice('connection'); ?>
                 <?php if ($has_key) : ?>
-                    <form method="post" action="<?php echo esc_url($save_url); ?>" class="nexoflow-disconnect">
+                    <form method="post" action="<?php echo esc_url($save_url); ?>" id="nexoflow-disconnect-form" class="nexoflow-disconnect" hidden>
                         <?php wp_nonce_field('nexoflow_disconnect', 'nexoflow_nonce'); ?>
                         <input type="hidden" name="action" value="nexoflow_disconnect" />
-                        <button type="submit" class="button button-secondary nexoflow-button-icon">
-                            <span class="dashicons dashicons-no" aria-hidden="true"></span>
-                            <?php echo esc_html__('Disconnect', 'nexoflow'); ?>
-                        </button>
                     </form>
                 <?php endif; ?>
             </div>
 
-            <div class="nexoflow-card">
+            <div class="nexoflow-card" id="nexoflow-card-status">
                 <h2 class="nexoflow-card-title">
                     <span class="dashicons dashicons-info" aria-hidden="true"></span>
                     <?php echo esc_html__('Status', 'nexoflow'); ?>
@@ -165,11 +187,28 @@ class NexoFlow_Settings
                         <dt><?php echo esc_html__('Last sync', 'nexoflow'); ?></dt>
                         <dd><?php echo esc_html($this->format_sync_time($last_sync)); ?></dd>
                     </div>
+                    <?php if ($connected) : ?>
+                        <div>
+                            <dt><?php echo esc_html__('Structured data', 'nexoflow'); ?></dt>
+                            <dd><?php echo esc_html($this->structured_data_status($site_data)); ?></dd>
+                        </div>
+                        <div>
+                            <dt><?php echo esc_html__('llms.txt', 'nexoflow'); ?></dt>
+                            <dd><?php
+                            if ($site_data['llms']) {
+                                echo '<a href="' . esc_url(home_url('/llms.txt')) . '" target="_blank" rel="noopener noreferrer">' . esc_html__('Served at /llms.txt', 'nexoflow') . '</a>';
+                            } else {
+                                echo esc_html__('Not on this site yet', 'nexoflow');
+                            }
+                            ?></dd>
+                        </div>
+                    <?php endif; ?>
                     <div>
                         <dt><?php echo esc_html__('Last error', 'nexoflow'); ?></dt>
                         <dd><?php echo $last_error !== '' ? esc_html($last_error) : esc_html__('None', 'nexoflow'); ?></dd>
                     </div>
                 </dl>
+                <?php $this->inline_notice('status'); ?>
                 <div class="nexoflow-actions">
                     <form method="post" action="<?php echo esc_url($save_url); ?>">
                         <?php wp_nonce_field('nexoflow_test_connection', 'nexoflow_nonce'); ?>
@@ -190,9 +229,57 @@ class NexoFlow_Settings
                 </div>
             </div>
 
+            <?php do_action('nexoflow_settings_cards'); ?>
+
+            <?php $this->inline_notice(''); ?>
             <p class="nexoflow-help"><?php echo esc_html__('Create a WordPress project in NexoFlow, copy the site connect key, paste it here. WordPress pulls new jobs every minute. Sync now is only needed if you want to pull immediately.', 'nexoflow'); ?></p>
+            </div>
+            <?php if ($has_side) : ?>
+                <div class="nexoflow-side">
+                    <?php do_action('nexoflow_settings_side'); ?>
+                </div>
+            <?php endif; ?>
+            </div>
         </div>
         <?php
+    }
+
+    /**
+     * Prints the message from the last action inside the card it belongs to, next
+     * to the button that was pressed. With an empty name it prints a message no
+     * card has shown yet, so one is never lost.
+     */
+    public function inline_notice($where)
+    {
+        $notice = $this->pending;
+
+        if (!is_array($notice) || ($where !== '' && $notice['where'] !== $where)) {
+            return;
+        }
+
+        $this->pending = null;
+        $error = $notice['type'] === 'error';
+
+        echo '<div id="nexoflow-notice" class="nexoflow-notice ' . ($error ? 'is-error' : 'is-success') . '" role="' . ($error ? 'alert' : 'status') . '" tabindex="-1">'
+            . '<span class="dashicons ' . ($error ? 'dashicons-warning' : 'dashicons-yes-alt') . '" aria-hidden="true"></span>'
+            . '<p>' . esc_html($notice['message']) . '</p></div>';
+    }
+
+    private function take_notice()
+    {
+        $notice = get_transient('nexoflow_admin_notice');
+
+        if (!is_array($notice) || !isset($notice['message']) || !is_string($notice['message']) || $notice['message'] === '') {
+            return null;
+        }
+
+        delete_transient('nexoflow_admin_notice');
+
+        return array(
+            'type' => isset($notice['type']) && $notice['type'] === 'error' ? 'error' : 'success',
+            'message' => $notice['message'],
+            'where' => isset($notice['where']) && is_string($notice['where']) ? sanitize_key($notice['where']) : '',
+        );
     }
 
     public function save()
@@ -209,7 +296,7 @@ class NexoFlow_Settings
         if ($raw !== '') {
             if (!NexoFlow_Client::is_valid_site_key($raw)) {
                 $message = NexoFlow_Client::site_key_error($raw);
-                $this->store_notice('error', $message);
+                $this->store_notice('error', $message, 'connection');
 
                 if (!NexoFlow_Client::has_site_key()) {
                     update_option('nexoflow_connected', 0, false);
@@ -217,24 +304,25 @@ class NexoFlow_Settings
                     update_option('nexoflow_project', array(), false);
                 }
 
-                $this->redirect('invalid_key');
+                $this->redirect('invalid_key', 'connection');
             }
 
             update_option('nexoflow_site_key', $raw, false);
+            do_action('nexoflow_site_key_saved', get_current_user_id());
         }
 
         if (!NexoFlow_Client::has_site_key()) {
-            $this->store_notice('error', NexoFlow_Client::site_key_error(''));
-            $this->redirect('missing_key');
+            $this->store_notice('error', NexoFlow_Client::site_key_error(''), 'connection');
+            $this->redirect('missing_key', 'connection');
         }
 
-        $this->probe_connection('saved_ok', 'saved_fail');
+        $this->probe_connection('saved_ok', 'saved_fail', 'connection');
     }
 
     public function test_connection()
     {
         $this->guard('nexoflow_test_connection');
-        $this->probe_connection('tested_ok', 'tested_fail');
+        $this->probe_connection('tested_ok', 'tested_fail', 'status');
     }
 
     public function disconnect()
@@ -242,14 +330,16 @@ class NexoFlow_Settings
         $this->guard('nexoflow_disconnect');
 
         delete_option('nexoflow_site_key');
+        delete_option(NexoFlow_Client::LEGACY_KEY_OPTION);
         delete_option('nexoflow_connected');
         delete_option('nexoflow_last_error');
         delete_option('nexoflow_last_sync');
         delete_option('nexoflow_project');
         delete_option('nexoflow_job_attempts');
+        do_action('nexoflow_disconnected');
 
-        $this->store_notice('success', __('Disconnected. Posts already on this site were left in place.', 'nexoflow'));
-        $this->redirect('disconnected');
+        $this->store_notice('success', __('Disconnected. Posts already on this site were left in place.', 'nexoflow'), 'connection');
+        $this->redirect('disconnected', 'connection');
     }
 
     public function sync_now()
@@ -260,40 +350,19 @@ class NexoFlow_Settings
         $result = $cron->sync();
 
         if (is_wp_error($result)) {
-            $this->store_notice('error', $result->get_error_message());
-            $this->redirect('sync_fail');
+            $this->store_notice('error', $result->get_error_message(), 'status');
+            $this->redirect('sync_fail', 'status');
         }
 
-        $this->store_notice('success', __('Sync finished.', 'nexoflow'));
-        $this->redirect('synced');
+        // Asked for by hand: the structured data and llms.txt are fetched now too.
+        $site_data = new NexoFlow_Site_Data();
+        $site_data->refresh(true);
+
+        $this->store_notice('success', __('Sync finished.', 'nexoflow'), 'status');
+        $this->redirect('synced', 'status');
     }
 
-    public function notices()
-    {
-        if (!current_user_can('manage_options')) {
-            return;
-        }
-
-        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
-
-        if (!$screen || $screen->id !== 'toplevel_page_nexoflow') {
-            return;
-        }
-
-        $notice = get_transient('nexoflow_admin_notice');
-        delete_transient('nexoflow_admin_notice');
-
-        if (!is_array($notice) || !isset($notice['message']) || !is_string($notice['message'])) {
-            return;
-        }
-
-        $type = isset($notice['type']) && $notice['type'] === 'error' ? 'error' : 'success';
-        $class = $type === 'error' ? 'notice-error' : 'notice-success';
-
-        echo '<div class="notice ' . esc_attr($class) . ' is-dismissible"><p>' . esc_html($notice['message']) . '</p></div>';
-    }
-
-    private function probe_connection($ok_notice, $fail_notice)
+    private function probe_connection($ok_notice, $fail_notice, $where)
     {
         $client = new NexoFlow_Client();
         $result = $client->health();
@@ -305,15 +374,15 @@ class NexoFlow_Settings
             update_option('nexoflow_connected', 0, false);
             update_option('nexoflow_last_error', $message, false);
             update_option('nexoflow_project', array(), false);
-            $this->store_notice('error', $message);
-            $this->redirect($fail_notice);
+            $this->store_notice('error', $message, $where);
+            $this->redirect($fail_notice, $where);
         }
 
         update_option('nexoflow_connected', 1, false);
         update_option('nexoflow_last_error', '', false);
         update_option('nexoflow_project', NexoFlow_Client::project_from_health($result), false);
-        $this->store_notice('success', __('Connected', 'nexoflow'));
-        $this->redirect($ok_notice);
+        $this->store_notice('success', __('Connected', 'nexoflow'), $where);
+        $this->redirect($ok_notice, $where);
     }
 
     private function project_status_rows($project)
@@ -342,6 +411,18 @@ class NexoFlow_Settings
         return $html;
     }
 
+    private function structured_data_status($site_data)
+    {
+        $pages = isset($site_data['pages']) ? (int) $site_data['pages'] : 0;
+
+        if ($pages <= 0) {
+            return __('Not on this site yet', 'nexoflow');
+        }
+
+        /* translators: %d: number of pages */
+        return sprintf(_n('On %d page', 'On %d pages', $pages, 'nexoflow'), $pages);
+    }
+
     private function status_row($label, $value_html)
     {
         return '<div><dt>' . esc_html($label) . '</dt><dd>' . $value_html . '</dd></div>';
@@ -358,7 +439,7 @@ class NexoFlow_Settings
         return '<a href="' . esc_url($url) . '" target="_blank" rel="noopener noreferrer">' . esc_html($host) . '</a>';
     }
 
-    private function guard($action)
+    public function guard($action)
     {
         if (!current_user_can('manage_options')) {
             wp_die(esc_html__('You do not have permission to change these settings.', 'nexoflow'));
@@ -367,30 +448,42 @@ class NexoFlow_Settings
         check_admin_referer($action, 'nexoflow_nonce');
     }
 
-    private function store_notice($type, $message)
+    /**
+     * Keeps the outcome of an action for the next page load. `$where` names the
+     * card it is shown in: connection, status or agent.
+     */
+    public function store_notice($type, $message, $where = '')
     {
         set_transient(
             'nexoflow_admin_notice',
             array(
                 'type' => $type,
                 'message' => $message,
+                'where' => sanitize_key($where),
             ),
             60
         );
     }
 
-    private function redirect($notice)
+    /** Back to the settings page, at the message the action left in its card. */
+    public function redirect($notice, $where = '')
     {
-        wp_safe_redirect(
-            add_query_arg(
-                array(
-                    'page' => self::PAGE,
-                    'nexoflow_notice' => sanitize_key($notice),
-                ),
-                admin_url('admin.php')
-            )
-        );
+        wp_safe_redirect($this->return_url($notice, $where));
         exit;
+    }
+
+    /** Where an action sends the browser afterwards: this page, scrolled to the message in its card. */
+    public function return_url($notice, $where = '')
+    {
+        $url = add_query_arg(
+            array(
+                'page' => self::PAGE,
+                'nexoflow_notice' => sanitize_key($notice),
+            ),
+            admin_url('admin.php')
+        );
+
+        return sanitize_key($where) !== '' ? $url . '#nexoflow-notice' : $url;
     }
 
     private function format_sync_time($timestamp)

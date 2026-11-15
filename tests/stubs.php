@@ -30,6 +30,24 @@ function update_option($name, $value, $autoload = true)
     return true;
 }
 
+function add_option($name, $value = '', $deprecated = '', $autoload = true)
+{
+    if (array_key_exists($name, $GLOBALS['nexoflow_options'])) {
+        return false;
+    }
+
+    $GLOBALS['nexoflow_options'][$name] = $value;
+
+    return true;
+}
+
+function delete_option($name)
+{
+    unset($GLOBALS['nexoflow_options'][$name]);
+
+    return true;
+}
+
 $GLOBALS['nexoflow_posts'] = array();
 $GLOBALS['nexoflow_terms'] = array(
     'category' => array(),
@@ -42,11 +60,23 @@ class WP_Error
 {
     private $code;
     private $message;
+    private $data;
 
-    public function __construct($code = '', $message = '')
+    public function __construct($code = '', $message = '', $data = '')
     {
         $this->code = $code;
         $this->message = $message;
+        $this->data = $data;
+    }
+
+    public function get_error_data()
+    {
+        return $this->data;
+    }
+
+    public function add_data($data)
+    {
+        $this->data = $data;
     }
 
     public function get_error_message()
@@ -63,6 +93,16 @@ class WP_Error
 function is_wp_error($thing)
 {
     return $thing instanceof WP_Error;
+}
+
+function wp_unslash($value)
+{
+    return is_string($value) ? stripslashes($value) : $value;
+}
+
+function esc_sql($value)
+{
+    return is_string($value) ? addslashes($value) : $value;
 }
 
 function sanitize_text_field($value)
@@ -92,7 +132,12 @@ function sanitize_file_name($filename)
 
 function wp_kses_post($content)
 {
-    return is_string($content) ? $content : '';
+    if (!is_string($content)) {
+        return '';
+    }
+
+    // Like WordPress: the tags go, the text that was between them stays.
+    return preg_replace('#</?script\b[^>]*>#i', '', $content);
 }
 
 function wp_parse_url($url, $component = -1)
@@ -129,10 +174,33 @@ function get_posts($args)
 
 function wp_insert_post($postarr, $wp_error = false)
 {
+    if (!empty($GLOBALS['nexoflow_insert_fails'])) {
+        return $wp_error ? new WP_Error('db_insert_error', 'Could not insert post into the database.') : 0;
+    }
+
+    if (!empty($GLOBALS['nexoflow_insert_throws'])) {
+        throw new RuntimeException('A hook on save_post failed at /var/www/secret/path.php');
+    }
+
+    // Like WordPress, the post fields arrive slashed and are stored unslashed.
+    foreach ($postarr as $field => $value) {
+        if (is_string($value)) {
+            $postarr[$field] = stripslashes($value);
+        }
+    }
+
+    $now = isset($GLOBALS['nexoflow_clock']) ? $GLOBALS['nexoflow_clock'] : gmdate('Y-m-d H:i:s');
+    $postarr['post_modified'] = $now;
     $id = isset($postarr['ID']) ? (int) $postarr['ID'] : 0;
 
     if ($id > 0 && isset($GLOBALS['nexoflow_posts'][$id])) {
+        $postarr['post_modified_gmt'] = $now;
         $GLOBALS['nexoflow_posts'][$id] = array_merge($GLOBALS['nexoflow_posts'][$id], $postarr);
+
+        // Like WordPress, every update is followed by a revision of the new state.
+        if (function_exists('wp_save_post_revision')) {
+            wp_save_post_revision($id);
+        }
 
         return $id;
     }
@@ -143,6 +211,14 @@ function wp_insert_post($postarr, $wp_error = false)
 
     if (!isset($postarr['meta'])) {
         $postarr['meta'] = array();
+    }
+
+    // Like WordPress, a new draft has no GMT time until it is first edited.
+    $is_draft = !isset($postarr['post_status']) || in_array($postarr['post_status'], array('draft', 'pending', 'auto-draft'), true);
+    $postarr['post_modified_gmt'] = $is_draft ? '0000-00-00 00:00:00' : $now;
+
+    if (!isset($postarr['post_author']) && function_exists('get_current_user_id')) {
+        $postarr['post_author'] = get_current_user_id();
     }
 
     $GLOBALS['nexoflow_posts'][$id] = $postarr;
@@ -255,6 +331,10 @@ function get_date_from_gmt($gmt)
 
 function apply_filters($hook, $value)
 {
+    if (isset($GLOBALS['nexoflow_filters'][$hook])) {
+        return call_user_func($GLOBALS['nexoflow_filters'][$hook], $value);
+    }
+
     return $value;
 }
 
