@@ -28,7 +28,9 @@ class NexoFlow_Rest
 
     public function can_sync()
     {
-        if (!NexoFlow_Client::has_site_key()) {
+        $auth = NexoFlow_Auth::check();
+
+        if ($auth === NexoFlow_Auth::NOT_CONNECTED) {
             return new WP_Error(
                 'nexoflow_rest',
                 __('Site is not connected.', 'nexoflow'),
@@ -36,10 +38,7 @@ class NexoFlow_Rest
             );
         }
 
-        $token = NexoFlow_Client::request_bearer_token();
-        $key = NexoFlow_Client::site_key();
-
-        if ($token === '' || !hash_equals($key, $token)) {
+        if ($auth !== NexoFlow_Auth::OK) {
             return new WP_Error(
                 'nexoflow_rest',
                 __('Invalid site connect key.', 'nexoflow'),

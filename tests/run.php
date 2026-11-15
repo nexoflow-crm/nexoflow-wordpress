@@ -20,27 +20,6 @@ function nexoflow_assert($condition, $message)
     echo "FAIL  {$message}\n";
 }
 
-$map = NexoFlow_Publisher::seo_meta_map(
-    array(
-        'metaTitle' => 'Why the opener failed',
-        'metaDescription' => 'Short listing excerpt',
-        'focusKeyword' => 'garage door opener',
-        'canonicalUrl' => '',
-        'noIndex' => false,
-        'noFollow' => true,
-    )
-);
-
-nexoflow_assert($map['yoast_wpseo_title'] === 'Why the opener failed', 'SEO map writes title');
-nexoflow_assert($map['yoast_wpseo_metadesc'] === 'Short listing excerpt', 'SEO map writes description');
-nexoflow_assert($map['yoast_wpseo_focuskw'] === 'garage door opener', 'SEO map writes focus keyword');
-nexoflow_assert($map['yoast_wpseo_meta-robots-noindex'] === '0', 'SEO map writes noindex off');
-nexoflow_assert($map['yoast_wpseo_meta-robots-nofollow'] === '1', 'SEO map writes nofollow on');
-nexoflow_assert($map['rank_math_title'] === 'Why the opener failed', 'SEO map writes rank math title');
-nexoflow_assert($map['rank_math_robots'] === array('index', 'nofollow'), 'SEO map writes rank math robots');
-nexoflow_assert($map['_aioseo_title'] === 'Why the opener failed', 'SEO map writes AIO title');
-nexoflow_assert($map['_aioseo_keywords'] === 'garage door opener', 'SEO map writes AIO keywords');
-
 $publisher = new NexoFlow_Publisher();
 nexoflow_reset_store();
 $term_ids = $publisher->assign_terms(0, array('Garage Door Repair'), 'category');
@@ -55,16 +34,31 @@ nexoflow_assert(NexoFlow_Publisher::is_safe_image_url('https://10.1.2.3/image.we
 nexoflow_assert(NexoFlow_Publisher::is_safe_image_url('https://192.168.1.10/image.webp') === false, 'Rejects 192.168 image URL');
 nexoflow_assert(NexoFlow_Publisher::is_safe_image_url('https://169.254.1.1/image.webp') === false, 'Rejects link-local image URL');
 nexoflow_assert(NexoFlow_Publisher::is_safe_image_url('https://localhost/image.webp') === false, 'Rejects localhost image URL');
+// Host lookups are answered here, so the tests never use the network.
+$GLOBALS['nexoflow_filters']['nexoflow_image_host_addresses'] = function () {
+    return $GLOBALS['nexoflow_test_host_addresses'];
+};
+$GLOBALS['nexoflow_test_host_addresses'] = array('93.184.216.34');
 nexoflow_assert(NexoFlow_Publisher::is_safe_image_url('https://example.com/image.webp') === true, 'Accepts public https image URL');
+$GLOBALS['nexoflow_test_host_addresses'] = array('93.184.216.34', '10.0.0.5');
+nexoflow_assert(NexoFlow_Publisher::is_safe_image_url('https://example.com/image.webp') === false, 'Rejects a host with any private address');
+$GLOBALS['nexoflow_test_host_addresses'] = array('2606:4700::1111', 'fd00::1');
+nexoflow_assert(NexoFlow_Publisher::is_safe_image_url('https://example.com/image.webp') === false, 'Rejects a host with a unique-local IPv6 address');
+$GLOBALS['nexoflow_test_host_addresses'] = array();
+nexoflow_assert(NexoFlow_Publisher::is_safe_image_url('https://example.com/image.webp') === false, 'Rejects a host that does not resolve');
+$GLOBALS['nexoflow_test_host_addresses'] = array('93.184.216.34');
+nexoflow_assert(NexoFlow_Publisher::is_safe_image_url('https://example.com:8443/image.webp') === false, 'Rejects an image on another port');
+nexoflow_assert(NexoFlow_Publisher::is_safe_image_url('https://user:pass@example.com/image.webp') === false, 'Rejects an image address with a login');
+nexoflow_assert(NexoFlow_Publisher::is_safe_image_url('https://[::1]/image.webp') === false, 'Rejects an IPv6 loopback image URL');
 
-$valid_key = 'nfwp_7c3a91e0b2d84f16a0c5e9d1b7f3082a4e6c1d9b0a8f3e25';
+$valid_key = 'nfwp_0123456789abcdef0123456789abcdef0123456789abcd25';
 nexoflow_assert(NexoFlow_Client::is_valid_site_key($valid_key) === true, 'Accepts nfwp_ plus 48 hex chars');
 nexoflow_assert(NexoFlow_Client::is_valid_site_key('a') === false, 'Rejects a one-letter key');
 nexoflow_assert(NexoFlow_Client::is_valid_site_key('') === false, 'Rejects an empty key');
-nexoflow_assert(NexoFlow_Client::is_valid_site_key('nfwp_7c3a91e0b2d84f16a0c5e9d1b7f3082a4e6c1d9b0a8f3e2') === false, 'Rejects a short key');
+nexoflow_assert(NexoFlow_Client::is_valid_site_key('nfwp_0123456789abcdef0123456789abcdef0123456789abcd2') === false, 'Rejects a short key');
 nexoflow_assert(NexoFlow_Client::is_valid_site_key('pk_live_not_a_plugin_key_xxxxxxxxxxxx') === false, 'Rejects a Content API key');
-nexoflow_assert(NexoFlow_Client::is_valid_site_key('nfwp_7c3a91e0b2d84f16a0c5e9d1b7f3082a4e6c1d9b0a8f3e2 ') === false, 'Rejects a key with a space');
-nexoflow_assert(NexoFlow_Client::is_valid_site_key('nfwp_7c3a91e0b2d84f16a0c5e9d1b7f3082a4e6c1d9b0a8f3ez5') === false, 'Rejects a non-hex key');
+nexoflow_assert(NexoFlow_Client::is_valid_site_key('nfwp_0123456789abcdef0123456789abcdef0123456789abcd2 ') === false, 'Rejects a key with a space');
+nexoflow_assert(NexoFlow_Client::is_valid_site_key('nfwp_0123456789abcdef0123456789abcdef0123456789abcdz5') === false, 'Rejects a non-hex key');
 nexoflow_assert(NexoFlow_Client::sanitize_api_base('') === 'https://nexoflow.net', 'Empty API base uses production');
 nexoflow_assert(NexoFlow_Client::sanitize_api_base('https://abc.ngrok.io/') === 'https://abc.ngrok.io', 'Tunnel API base is kept');
 nexoflow_assert(NexoFlow_Client::sanitize_api_base('http://example.com') === '', 'Rejects http API base');
@@ -75,21 +69,29 @@ nexoflow_assert(NexoFlow_Client::request_bearer_token() === $valid_key, 'Reads a
 $_SERVER['HTTP_AUTHORIZATION'] = 'Basic nope';
 nexoflow_assert(NexoFlow_Client::request_bearer_token() === '', 'Rejects a non-Bearer header');
 unset($_SERVER['HTTP_AUTHORIZATION']);
+$_SERVER['REDIRECT_HTTP_AUTHORIZATION'] = "  Bearer " . $valid_key . " \n";
+nexoflow_assert(NexoFlow_Client::request_bearer_token() === $valid_key, 'Reads a Bearer token a server passed on under its other name, cleaned of stray whitespace');
+unset($_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
+$_SERVER['HTTP_AUTHORIZATION'] = 'Bearer <script>alert(1)</script>';
+nexoflow_assert(!NexoFlow_Client::is_valid_site_key(NexoFlow_Client::request_bearer_token()) && strpos(NexoFlow_Client::request_bearer_token(), '<') === false, 'A header carrying markup is cleaned and is never a key');
+$_SERVER['HTTP_AUTHORIZATION'] = addslashes("Bearer it's\\not");
+nexoflow_assert(NexoFlow_Client::request_bearer_token() === "it's\\not", 'The header is read without the slashes WordPress adds to it');
+unset($_SERVER['HTTP_AUTHORIZATION']);
 
 $health = array(
     'ok' => true,
     'project' => array(
         'name' => 'Garage',
-        'websiteUrl' => 'https://theknollgaragedoor.com',
-        'wordpressUrl' => 'https://theknollgaragedoor.com',
+        'websiteUrl' => 'https://summit.example',
+        'wordpressUrl' => 'https://summit.example',
         'email' => 'hidden@example.com',
         'billing' => 'do-not-store',
     ),
 );
 $card = NexoFlow_Client::project_from_health($health);
 nexoflow_assert($card['name'] === 'Garage', 'Health card keeps the project name');
-nexoflow_assert($card['websiteUrl'] === 'https://theknollgaragedoor.com', 'Health card keeps the website URL');
-nexoflow_assert($card['wordpressUrl'] === 'https://theknollgaragedoor.com', 'Health card keeps the WordPress URL');
+nexoflow_assert($card['websiteUrl'] === 'https://summit.example', 'Health card keeps the website URL');
+nexoflow_assert($card['wordpressUrl'] === 'https://summit.example', 'Health card keeps the WordPress URL');
 nexoflow_assert(!isset($card['email']) && !isset($card['billing']), 'Health card drops unsafe fields');
 nexoflow_assert(NexoFlow_Client::project_from_health(array('ok' => false, 'error' => 'Invalid site connect key.')) === array(), 'Rejected health has no project card');
 $split = NexoFlow_Client::project_from_health(
@@ -97,53 +99,39 @@ $split = NexoFlow_Client::project_from_health(
         'ok' => true,
         'project' => array(
             'name' => 'Garage',
-            'websiteUrl' => 'https://theknollgaragedoor.com',
-            'wordpressUrl' => 'https://wp.theknollgaragedoor.com',
+            'websiteUrl' => 'https://summit.example',
+            'wordpressUrl' => 'https://wp.summit.example',
         ),
     )
 );
 nexoflow_assert($split['websiteUrl'] !== $split['wordpressUrl'], 'Different site URLs stay separate');
 
-nexoflow_reset_store();
-$job = array(
-    'id' => 'job_01HZX',
-    'action' => 'upsert',
-    'idempotencyKey' => 'proj_xxx:slug-of-post',
-    'post' => array(
-        'title' => 'Why the opener failed',
-        'slug' => 'why-the-opener-failed',
-        'content' => '<p>HTML or Gutenberg-safe HTML</p>',
-        'excerpt' => 'Short listing excerpt',
-        'status' => 'publish',
-        'dateGmt' => '2026-09-17T18:00:00Z',
-        'categories' => array('Garage Door Repair'),
-        'tags' => array('opener', 'troubleshooting'),
-        'authorLogin' => '',
-        'seo' => array(
-            'metaTitle' => 'Why the opener failed',
-            'metaDescription' => 'Short listing excerpt',
-            'focusKeyword' => 'opener',
-            'canonicalUrl' => '',
-            'noIndex' => false,
-            'noFollow' => false,
-        ),
-    ),
-);
+// A site updated from NexoFlow's own download keeps its key under the old option: it is moved across on first read.
+$saved_options = $GLOBALS['nexoflow_options'];
+$GLOBALS['nexoflow_options'] = array('nexoflow_site_connect_key' => ' ' . $valid_key . ' ');
+nexoflow_assert(NexoFlow_Client::site_key() === $valid_key, 'A key from the old download is read after the update');
+nexoflow_assert(($GLOBALS['nexoflow_options']['nexoflow_site_key'] ?? '') === $valid_key, 'It is saved under the current option');
+nexoflow_assert(!array_key_exists('nexoflow_site_connect_key', $GLOBALS['nexoflow_options']), 'The old option is removed once moved');
+nexoflow_assert(NexoFlow_Client::has_site_key() === true, 'The site counts as connected');
 
-$first = $publisher->process_job($job);
-nexoflow_assert(!empty($first['ok']), 'First upsert succeeds');
-nexoflow_assert((int) $first['wordpressPostId'] === 1, 'First upsert creates post 1');
-nexoflow_assert(count($GLOBALS['nexoflow_posts']) === 1, 'First upsert stores one post');
-nexoflow_assert($GLOBALS['nexoflow_posts'][1]['meta']['_nexoflow_idempotency'] === 'proj_xxx:slug-of-post', 'Stores idempotency meta');
-nexoflow_assert($GLOBALS['nexoflow_posts'][1]['meta']['yoast_wpseo_title'] === 'Why the opener failed', 'Writes Yoast-shaped title');
-nexoflow_assert(isset($GLOBALS['nexoflow_posts'][1]['terms']['category']), 'Assigns category terms');
+$GLOBALS['nexoflow_options'] = array('nexoflow_site_connect_key' => 'not-a-key');
+nexoflow_assert(NexoFlow_Client::site_key() === '', 'A malformed old key is not moved');
+nexoflow_assert(!array_key_exists('nexoflow_site_key', $GLOBALS['nexoflow_options']), 'Nothing is saved for it');
 
-$job['post']['title'] = 'Why the opener failed (updated)';
-$second = $publisher->process_job($job);
-nexoflow_assert(!empty($second['ok']), 'Second upsert succeeds');
-nexoflow_assert((int) $second['wordpressPostId'] === 1, 'Second upsert updates the same post');
-nexoflow_assert(count($GLOBALS['nexoflow_posts']) === 1, 'Second upsert does not duplicate the post');
-nexoflow_assert($GLOBALS['nexoflow_posts'][1]['post_title'] === 'Why the opener failed (updated)', 'Second upsert changes the title');
+$other_key = 'nfwp_' . str_repeat('ab', 24);
+$GLOBALS['nexoflow_options'] = array('nexoflow_site_key' => $other_key, 'nexoflow_site_connect_key' => $valid_key);
+nexoflow_assert(NexoFlow_Client::site_key() === $other_key, 'A key saved in this version wins over the old one');
+
+$GLOBALS['nexoflow_options'] = array();
+nexoflow_assert(NexoFlow_Client::site_key() === '', 'With neither, there is no key');
+$GLOBALS['nexoflow_options'] = $saved_options;
+
+require __DIR__ . '/agent.php';
+require __DIR__ . '/site-data.php';
+require __DIR__ . '/indexnow.php';
+require __DIR__ . '/bing.php';
+require __DIR__ . '/seo.php';
+require __DIR__ . '/publisher.php';
 
 if ($failed > 0) {
     echo "\n{$failed} failed\n";

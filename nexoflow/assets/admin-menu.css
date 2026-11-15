@@ -1,14 +1,16 @@
+/* The NexoFlow mark, white and at full strength in every state, like the other menu icons.
+   WordPress dims image menu icons to 60% by default, which made it look grey and soft.
+   box-sizing is set here because other plugins' and themes' admin styles reset every element
+   (`* { box-sizing: border-box; margin: 0; padding: 0 }`): with border-box the 7px top padding was taken out
+   of the 20px and the mark shrank to 13px on every admin page that loads such a style.
+   The margin is left to WordPress, which centres the mark in its slot; setting it here pushed the mark off centre. */
 #adminmenu .toplevel_page_nexoflow .wp-menu-image img {
-  padding: 6px 0 0;
+  box-sizing: content-box;
+  padding: 7px 0 0;
   width: 20px;
   height: 20px;
+  max-width: none;
   object-fit: contain;
-  filter: brightness(0) invert(1);
-  opacity: 0.7;
-}
-
-#adminmenu .toplevel_page_nexoflow:hover .wp-menu-image img,
-#adminmenu .toplevel_page_nexoflow.wp-has-current-submenu .wp-menu-image img,
-#adminmenu .toplevel_page_nexoflow.current .wp-menu-image img {
   opacity: 1;
+  filter: brightness(0) invert(1);
 }

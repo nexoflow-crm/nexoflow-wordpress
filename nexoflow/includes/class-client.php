@@ -8,7 +8,14 @@ class NexoFlow_Client
 {
     const TIMEOUT = 20;
 
-    const REDIRECTION = 3;
+    /**
+     * The key is only ever sent to the API address itself. A redirect is answered as an error, never followed, so
+     * the key cannot be carried to another host or over plain HTTP.
+     */
+    const REDIRECTION = 0;
+
+    /** A hash of a key NexoFlow answered with 401: the site stops accepting it too until a call with it works again. */
+    const REVOKED_KEY_OPTION = 'nexoflow_revoked_key';
 
     const KEY_PREFIX = 'nfwp_';
 
@@ -16,28 +23,58 @@ class NexoFlow_Client
 
     const KEY_LENGTH = 53;
 
+    /**
+     * Where the plugin served by NexoFlow's own download (1.0.0 to 1.2.5, the same "nexoflow" folder) kept the key.
+     */
+    const LEGACY_KEY_OPTION = 'nexoflow_site_connect_key';
+
     public static function site_key()
     {
         $key = get_option('nexoflow_site_key', '');
 
+        if (!is_string($key) || $key === '') {
+            $key = self::adopt_legacy_site_key();
+        }
+
         return is_string($key) ? $key : '';
+    }
+
+    /**
+     * A site updated from NexoFlow's own download still has its key under the old option. The first read after the
+     * update moves a well-formed one across, so the site stays connected with nothing to paste again. The old option
+     * is removed once moved, so a later Disconnect is never undone by it.
+     */
+    public static function adopt_legacy_site_key()
+    {
+        $legacy = get_option(self::LEGACY_KEY_OPTION, '');
+        $legacy = is_string($legacy) ? trim($legacy) : '';
+
+        if (!self::is_valid_site_key($legacy)) {
+            return '';
+        }
+
+        update_option('nexoflow_site_key', $legacy, false);
+        delete_option(self::LEGACY_KEY_OPTION);
+
+        return $legacy;
     }
 
     public static function request_bearer_token()
     {
         $header = '';
 
+        // The header is unslashed and cleaned like any other input before it is read.
         if (isset($_SERVER['HTTP_AUTHORIZATION']) && is_string($_SERVER['HTTP_AUTHORIZATION'])) {
-            $header = $_SERVER['HTTP_AUTHORIZATION'];
+            $header = sanitize_text_field(wp_unslash($_SERVER['HTTP_AUTHORIZATION']));
         } elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION']) && is_string($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
-            $header = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+            $header = sanitize_text_field(wp_unslash($_SERVER['REDIRECT_HTTP_AUTHORIZATION']));
         } elseif (function_exists('getallheaders')) {
             $headers = getallheaders();
 
             if (is_array($headers)) {
                 foreach ($headers as $name => $value) {
                     if (is_string($name) && strtolower($name) === 'authorization' && is_string($value)) {
-                        $header = $value;
+                        $header = sanitize_text_field($value);
                         break;
                     }
                 }
@@ -213,7 +250,48 @@ class NexoFlow_Client
             $jobs = $result['jobs'];
         }
 
-        return array('jobs' => $jobs);
+        $answer = array('jobs' => $jobs);
+
+        // The change-notice key and Bing's code come with the jobs; the sync keeps them.
+        foreach (array('indexNowKey', 'bingSiteVerification') as $field) {
+            if (isset($result[$field]) && is_string($result[$field])) {
+                $answer[$field] = $result[$field];
+            }
+        }
+
+        return $answer;
+    }
+
+    /** True when NexoFlow last answered this site's current key with 401. */
+    public static function key_was_revoked($key = null)
+    {
+        $key = $key === null ? self::site_key() : $key;
+        $revoked = get_option(self::REVOKED_KEY_OPTION, '');
+
+        return is_string($key) && $key !== '' && is_string($revoked) && $revoked !== ''
+            && hash_equals($revoked, hash('sha256', $key));
+    }
+
+    /**
+     * The JSON-LD for the site's pages. With the version the site already
+     * holds, NexoFlow answers "unchanged" without sending the pages again.
+     */
+    public function get_structured_data($held_version = '')
+    {
+        return $this->request('GET', '/api/v1/wordpress-plugin/structured-data' . self::version_query($held_version));
+    }
+
+    /** The site's llms.txt, the same way. */
+    public function get_llms_txt($held_version = '')
+    {
+        return $this->request('GET', '/api/v1/wordpress-plugin/llms-txt' . self::version_query($held_version));
+    }
+
+    private static function version_query($version)
+    {
+        $version = is_string($version) ? $version : '';
+
+        return preg_match('/^[A-Za-z0-9_-]{1,64}$/', $version) ? '?version=' . rawurlencode($version) : '';
     }
 
     public function ack($job_id, $body)
@@ -270,8 +348,18 @@ class NexoFlow_Client
         $raw = wp_remote_retrieve_body($response);
         $decoded = json_decode($raw, true);
 
+        // NexoFlow's own answer for a key it no longer accepts. A 403 or a bare 401 may come from something in
+        // between, so only NexoFlow's JSON answer marks the key as revoked.
+        if ($code === 401 && is_array($decoded)) {
+            update_option(self::REVOKED_KEY_OPTION, hash('sha256', $key), false);
+        }
+
         if ($code === 401 || $code === 403) {
             return new WP_Error('nexoflow_auth', $this->error_from_body($decoded, __('Invalid site connect key.', 'nexoflow')));
+        }
+
+        if ($code >= 200 && $code < 300 && get_option(self::REVOKED_KEY_OPTION, '') !== '') {
+            delete_option(self::REVOKED_KEY_OPTION);
         }
 
         if ($code === 404) {

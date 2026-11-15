@@ -16,5 +16,6 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           coverage: none
+          extensions: sqlite3
       - name: Run plugin tests
         run: php tests/run.php
