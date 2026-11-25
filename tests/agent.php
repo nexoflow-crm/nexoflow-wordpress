@@ -166,6 +166,13 @@ $partial = new NexoFlow_Test_World(
 );
 nexoflow_assert($partial->capabilities->get('elementor.inspect')['reason'] === 'ELEMENTOR_ABILITY_MISSING', 'A capability needs the specific ability behind it');
 
+// Elementor 4.4 replaced get-widget-schema with get-widget-schemas.
+$without_schema = array_values(array_diff(NEXOFLOW_TEST_ELEMENTOR_ABILITIES, array('elementor/get-widget-schema')));
+$elementor_44 = new NexoFlow_Test_World(array('abilities' => array_merge($without_schema, array('elementor/get-widget-schemas'))) + nexoflow_elementor_ready());
+nexoflow_assert(in_array('elementor.build', $elementor_44->capabilities->usable(), true), 'Elementor 4.4, which renamed the ability that says how an element is set, still offers building');
+$no_schema = new NexoFlow_Test_World(array('abilities' => $without_schema) + nexoflow_elementor_ready());
+nexoflow_assert($no_schema->capabilities->get('elementor.build')['reason'] === 'ELEMENTOR_ABILITY_MISSING', 'Building is not offered when Elementor cannot say how an element is set');
+
 $real = new NexoFlow_Agent_Provider_Elementor(new NexoFlow_Agent_Abilities(), new NexoFlow_Agent_Documents());
 nexoflow_assert($real->detect()['reason'] === 'ELEMENTOR_NOT_INSTALLED', 'The real probe finds no Elementor on a site without it');
 
@@ -596,6 +603,33 @@ nexoflow_assert(array_keys($guided['settings']) === array('e-heading') && $guide
 nexoflow_assert($guided['images'] === array(array('id' => 7, 'title' => 'Van outside', 'alt' => 'Our van', 'width' => 1600, 'height' => 900)) && strpos(wp_json_encode($guided), 'ignore this') === false, 'The guide lists the library images by id, cleaned, and nothing else of what Elementor said');
 nexoflow_assert(nexoflow_details($world->call('elementor.guide', array('types' => array(array('type' => 'e-rocket')))))['fields']['types'] === 'not_allowed', 'An element type Elementor does not have here is refused');
 nexoflow_assert(nexoflow_details($world->call('elementor.guide', array('types' => array(array('type' => '../x')))))['fields']['types.0.type'] === 'format', 'An element type with unexpected characters is refused');
+
+// Like Elementor 4.4: every type asked for in one list, the settings keyed by type.
+$schema_43 = $GLOBALS['nexoflow_abilities']['elementor/get-widget-schema'];
+unset($GLOBALS['nexoflow_abilities']['elementor/get-widget-schema']);
+$elementor_does('elementor/get-widget-schemas', function ($input) {
+    $schemas = array();
+
+    foreach ($input['widget_type'] as $type) {
+        $schemas[$type] = array('type' => 'object', 'properties' => array('title' => array('type' => 'string')), 'asked' => $input['widget_type']);
+    }
+
+    return array('schemas' => $schemas, 'errors' => array());
+});
+$elementor_calls = array();
+$guide_44 = $world->call('elementor.guide', array('types' => array(array('type' => 'e-heading'), array('type' => 'e-flexbox'), array('type' => 'e-heading'))));
+$guided_44 = nexoflow_result($guide_44);
+$schema_calls = array_values(array_filter($elementor_calls, function ($call) {
+    return strpos($call[0], 'elementor/get-widget-schema') === 0;
+}));
+nexoflow_assert($schema_calls === array(array('elementor/get-widget-schemas', array('widget_type' => array('e-heading', 'e-flexbox')))), 'On Elementor 4.4 the guide asks for every element type in one call, each once');
+nexoflow_assert(nexoflow_code($guide_44) === 'OK' && array_keys($guided_44['settings']) === array('e-heading', 'e-flexbox') && $guided_44['settings']['e-flexbox']['properties']['title']['type'] === 'string', 'On Elementor 4.4 the guide returns the settings of each element type asked for');
+$elementor_does('elementor/get-widget-schemas', function () {
+    return array('schemas' => array(), 'errors' => array('e-heading' => 'Unknown widget'));
+});
+nexoflow_assert(nexoflow_code($world->call('elementor.guide', array('types' => array(array('type' => 'e-heading'))))) === 'PROVIDER_ERROR', 'An answer without the element type asked for is an error, not an empty guide');
+unset($GLOBALS['nexoflow_abilities']['elementor/get-widget-schemas']);
+$GLOBALS['nexoflow_abilities']['elementor/get-widget-schema'] = $schema_43;
 
 $structure = '<e-flexbox configuration-id="Hero"><e-heading configuration-id="Hero title"></e-heading></e-flexbox>';
 $settings = array('Hero title' => array('tag' => 'h1', 'title' => 'Ember & Brew', 'link' => array('destination' => 'https://example.com', 'tag' => 'a')));

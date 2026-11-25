@@ -239,7 +239,8 @@ nexoflow_live_ok(nexoflow_live_code($slug) === 'INVALID_PARAMETERS' && get_post_
 $tree = nexoflow_live_act('blocks.read', array('page_id' => $page['page_id']));
 $before_insert = (string) get_post_field('post_content', $page['page_id'], 'raw');
 $section = "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group\"><!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Why homeowners choose us</h2>\n<!-- /wp:heading -->\n\n<!-- wp:paragraph -->\n<p>Same-week installation.<script>steal()</script></p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->";
-$clean_section = str_replace(array('<script>', '</script>'), '', $section);
+// WordPress 7.2 removes what is inside a script tag too; earlier versions keep its text.
+$clean_section = str_replace('<script>steal()</script>', wp_kses_post('<script>steal()</script>'), $section);
 $insert = array('page_id' => $page['page_id'], 'expected_revision' => $tree['body']['result']['revision'], 'content' => $section, 'position' => 'after', 'path' => '0');
 nexoflow_live_ok(nexoflow_live_code(nexoflow_live_act('blocks.insert', $insert)) === 'DRAFT_REQUIRED', 'Blocks are not added to a published page without live mode');
 $added = nexoflow_live_act('blocks.insert', $insert, array('mode' => 'live', 'request_id' => $run . '_section'));

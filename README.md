@@ -202,8 +202,8 @@ NexoFlow is the intelligence layer. This plugin is the secure execution layer. T
 | Homepages drawn from a block theme template: `templates.read`, `templates.insert`, `templates.replace`, `templates.restore` | **Implemented** for top-level blocks |
 | Header, footer and other template parts of a block theme, through the same `templates.*` actions with `kind: part` | **Implemented** for top-level blocks |
 | `media.upload` (add an image to the media library) | **Implemented** for JPEG, PNG, WebP and GIF |
-| `elementor.inspect` (element tree through Elementor's own ability) | **Implemented**, run against Elementor 4.3.4 |
-| `elementor.guide`, `elementor.create_page`, `elementor.build`, `elementor.publish` (build pages through Elementor's own abilities) | **Implemented**, tested with Elementor 4.3.4 on a classic and a block theme |
+| `elementor.inspect` (element tree through Elementor's own ability) | **Implemented**, run against Elementor 4.3.4 and 4.4.2 |
+| `elementor.guide`, `elementor.create_page`, `elementor.build`, `elementor.publish` (build pages through Elementor's own abilities) | **Implemented**, tested with Elementor 4.3.4 on a classic and a block theme, and with 4.4.2 on WordPress 7.1.5 and 7.2. Elementor 4.4 renamed `get-widget-schema` to `get-widget-schemas`; the plugin uses whichever the site has |
 | `site.set_front_page` (choose the homepage, and put the earlier one back) | **Implemented** |
 | Diagnostics card in the WordPress admin | **Implemented** |
 | Activity log with plain-word reasons and a report to copy for support (never the site connect key) | **Implemented** |
@@ -235,7 +235,7 @@ Returns what this specific site can do right now:
 {
   "success": true,
   "api_version": "1",
-  "plugin": { "version": "2.0.0" },
+  "plugin": { "version": "2.0.1" },
   "site": { "id": "nfsite_3f9c…", "connected": true, "url": "https://example.com/", "language": "en-US", "front_page": { "show": "page", "page_id": 2, "template": null } },
   "wordpress": { "version": "6.9", "php_version": "8.3.6" },
   "theme": { "name": "Hello Elementor", "block_theme": false, "template_parts": [] },

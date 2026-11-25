@@ -2,9 +2,9 @@
 Contributors: fl0rentg
 Tags: seo, structured data, llms.txt, elementor, publishing
 Requires at least: 6.0
-Tested up to: 7.1
+Tested up to: 7.2
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -147,6 +147,10 @@ The last error is stored and shown on the settings page. Jobs are not retried fo
 No. Uninstall removes NexoFlow settings and the Website Agent request table. Posts and pages stay on the site.
 
 == Changelog ==
+
+= 2.0.1 =
+* Elementor 4.4: pages are built with Elementor again. Elementor 4.4 renamed one of the abilities NexoFlow uses, so 2.0.0 said this Elementor version could not build pages. Elementor 4.3 keeps working as before.
+* Tested with WordPress 7.2.
 
 = 2.0.0 =
 One release for every NexoFlow site, whether it ran 1.0.2 from WordPress.org or a version from NexoFlow's own download (1.0.0 to 1.2.5).

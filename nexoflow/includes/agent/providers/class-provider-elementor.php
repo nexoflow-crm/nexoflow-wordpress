@@ -27,7 +27,10 @@ class NexoFlow_Agent_Provider_Elementor implements NexoFlow_Agent_Builder
 
     const ABILITY_WIDGETS = 'elementor/list-widget-schemas';
 
+    // Elementor 4.3 says how one element type is set; 4.4 replaced it with one call for several.
     const ABILITY_WIDGET = 'elementor/get-widget-schema';
+
+    const ABILITY_WIDGET_SCHEMAS = 'elementor/get-widget-schemas';
 
     const ABILITY_CREATE = 'elementor/create-page';
 
@@ -157,6 +160,7 @@ class NexoFlow_Agent_Provider_Elementor implements NexoFlow_Agent_Builder
     {
         $detected = $this->detect();
         $offered = $detected['mcp']['abilities'];
+        $widget_schema = in_array(self::ABILITY_WIDGET_SCHEMAS, $offered, true) ? self::ABILITY_WIDGET_SCHEMAS : self::ABILITY_WIDGET;
         $capability = function ($needs, $requires, $writes) use ($detected, $offered) {
             $missing = array_diff($needs, $offered);
             $reason = $detected['reason'];
@@ -185,7 +189,7 @@ class NexoFlow_Agent_Provider_Elementor implements NexoFlow_Agent_Builder
         return array(
             'elementor.inspect' => $capability(array(self::ABILITY_STRUCTURE), 'edit_pages', false),
             'elementor.build' => $capability(
-                array(self::ABILITY_WIDGETS, self::ABILITY_WIDGET, self::ABILITY_CREATE, self::ABILITY_BUILD),
+                array(self::ABILITY_WIDGETS, $widget_schema, self::ABILITY_CREATE, self::ABILITY_BUILD),
                 'edit_pages',
                 true
             ),
@@ -470,7 +474,7 @@ class NexoFlow_Agent_Provider_Elementor implements NexoFlow_Agent_Builder
             }
         }
 
-        $schemas = array();
+        $asked_types = array();
 
         foreach (isset($params['types']) ? $params['types'] : array() as $asked) {
             $type = $asked['type'];
@@ -483,13 +487,13 @@ class NexoFlow_Agent_Provider_Elementor implements NexoFlow_Agent_Builder
                 );
             }
 
-            $schema = $this->abilities->execute(self::ABILITY_WIDGET, array('widget_type' => $type));
+            $asked_types[$type] = $type;
+        }
 
-            if (is_wp_error($schema)) {
-                return $this->ability_error($schema);
-            }
+        $schemas = $this->widget_schemas(array_values($asked_types));
 
-            $schemas[$type] = $schema;
+        if (is_wp_error($schemas)) {
+            return $this->ability_error($schemas);
         }
 
         $elements = array();
@@ -504,6 +508,51 @@ class NexoFlow_Agent_Provider_Elementor implements NexoFlow_Agent_Builder
             'settings' => $schemas,
             'images' => $this->library_images(),
         );
+    }
+
+    /**
+     * How each element type is set, keyed by type. Elementor 4.4 answers for every type in one call and
+     * keys its answer by type; 4.3 answers for one type a call.
+     *
+     * @return array|WP_Error
+     */
+    private function widget_schemas($types)
+    {
+        $schemas = array();
+
+        if (empty($types)) {
+            return $schemas;
+        }
+
+        if (!$this->abilities->has(self::ABILITY_WIDGET_SCHEMAS)) {
+            foreach ($types as $type) {
+                $schema = $this->abilities->execute(self::ABILITY_WIDGET, array('widget_type' => $type));
+
+                if (is_wp_error($schema)) {
+                    return $schema;
+                }
+
+                $schemas[$type] = $schema;
+            }
+
+            return $schemas;
+        }
+
+        $answer = $this->abilities->execute(self::ABILITY_WIDGET_SCHEMAS, array('widget_type' => $types));
+
+        if (is_wp_error($answer)) {
+            return $answer;
+        }
+
+        foreach ($types as $type) {
+            if (!is_array($answer) || !isset($answer['schemas'][$type]) || !is_array($answer['schemas'][$type])) {
+                return new WP_Error('nexoflow_widget_schema_missing', __('Elementor did not say how this element type is set.', 'nexoflow'));
+            }
+
+            $schemas[$type] = $answer['schemas'][$type];
+        }
+
+        return $schemas;
     }
 
     // The images already in the media library, which are the only ones a page may use.

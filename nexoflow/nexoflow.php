@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NexoFlow
  * Description: Connects this WordPress site to its NexoFlow SEO team: articles, pages, search listings, link previews, structured data, redirects and speed.
- * Version: 2.0.0
+ * Version: 2.0.1
  * Author: fl0rentg
  * Author URI: https://nexoflow.net
  * License: GPLv2 or later
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('NEXOFLOW_VERSION', '2.0.0');
+define('NEXOFLOW_VERSION', '2.0.1');
 define('NEXOFLOW_FILE', __FILE__);
 define('NEXOFLOW_DIR', plugin_dir_path(__FILE__));
 define('NEXOFLOW_URL', plugin_dir_url(__FILE__));
